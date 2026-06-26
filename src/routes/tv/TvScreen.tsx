@@ -4,6 +4,7 @@ import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { PHASE_LABELS } from '@/features/session/api';
 import { TvAuctionView } from '@/features/auction/TvAuctionView';
+import { ResultsView } from '@/features/results/ResultsView';
 import type { SessionState } from '@/models';
 
 const GOLD = '#c4975a';
@@ -44,6 +45,10 @@ export function TvScreen() {
 
   if (phase === 'auction') {
     return <TvAuctionView code={code} />;
+  }
+
+  if (phase === 'result') {
+    return <ResultsView code={code} />;
   }
 
   return (

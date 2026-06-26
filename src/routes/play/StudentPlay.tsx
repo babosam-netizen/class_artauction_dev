@@ -10,7 +10,10 @@ import { sortByOrder } from '@/features/artwork/api';
 import { GalleryView } from '@/features/appreciation/GalleryView';
 import { BranchView } from '@/features/branch/BranchView';
 import { StudentAuctionView } from '@/features/auction/StudentAuctionView';
+import { ResultsView } from '@/features/results/ResultsView';
+import { PrologueView } from '@/features/prologue/PrologueView';
 import { DEFAULT_PROMPTS } from '@/content/prompts';
+import { DEFAULT_PROLOGUE } from '@/content/prologue';
 import type {
   Artwork,
   Group,
@@ -156,6 +159,12 @@ function StudentSession({ joined }: { joined: Joined }) {
   const prompts =
     content?.prompts && content.prompts.length > 0 ? content.prompts : DEFAULT_PROMPTS[gradeBand];
 
+  if (phase === 'prologue') {
+    const steps =
+      content?.prologue && content.prologue.length > 0 ? content.prologue : DEFAULT_PROLOGUE[gradeBand];
+    return <PrologueView steps={steps} />;
+  }
+
   if (phase === 'gallery' && meta) {
     const common = sortByOrder(artworks.filter((a) => a.placement?.kind === 'common'));
     return (
@@ -197,7 +206,11 @@ function StudentSession({ joined }: { joined: Joined }) {
     );
   }
 
-  // lobby / prologue / result 등: 대기 화면
+  if (phase === 'result') {
+    return <ResultsView code={joined.code} />;
+  }
+
+  // lobby / prologue 등: 대기 화면
   return (
     <MuseumShell title={`${joined.name} 님`} route="/play">
       <div className="mt-6 text-center">

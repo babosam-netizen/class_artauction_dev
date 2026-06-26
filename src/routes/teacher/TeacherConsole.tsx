@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { MuseumShell } from '@/components/MuseumShell';
 import { ArtworkManager } from './ArtworkManager';
 import { TeacherAuctionPanel } from '@/features/auction/TeacherAuctionPanel';
+import { TeacherResultPanel } from '@/features/results/TeacherResultPanel';
+import { ContentEditor } from './ContentEditor';
 import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import {
@@ -103,8 +105,12 @@ export function TeacherConsole() {
           </button>
         </div>
 
+        {(phase === 'lobby' || phase === 'prologue') && <ContentEditor code={code} />}
+
         {phase === 'auction' && meta ? (
           <TeacherAuctionPanel code={code} meta={meta} />
+        ) : phase === 'result' && meta ? (
+          <TeacherResultPanel code={code} gradeBand={meta.gradeBand} />
         ) : (
           <ArtworkManager code={code} branchDoorCount={meta?.branchDoorCount ?? 4} />
         )}

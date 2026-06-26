@@ -112,3 +112,8 @@ export async function sessionExists(code: string): Promise<boolean> {
 export async function setPhase(code: string, phase: Phase): Promise<void> {
   await update(ref(db, paths.state(code)), { phase });
 }
+
+/** 교사 콘텐츠(프롤로그·발문) 편집 저장. */
+export async function saveContent(code: string, content: SessionContent): Promise<void> {
+  await set(ref(db, paths.content(code)), content);
+}

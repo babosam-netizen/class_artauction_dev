@@ -15,6 +15,7 @@ export const paths = {
   artworks: (code: string) => `sessions/${code}/artworks`,
   artwork: (code: string, artworkId: string) => `sessions/${code}/artworks/${artworkId}`,
 
+  allAppreciations: (code: string) => `sessions/${code}/appreciations`,
   appreciations: (code: string, number: string) =>
     `sessions/${code}/appreciations/${number}`,
   appreciation: (code: string, number: string, artworkId: string) =>
