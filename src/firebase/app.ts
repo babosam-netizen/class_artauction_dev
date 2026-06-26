@@ -1,5 +1,10 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import {
+  getAuth,
+  connectAuthEmulator,
+  signInAnonymously,
+  onAuthStateChanged,
+} from 'firebase/auth';
 import { getDatabase, connectDatabaseEmulator } from 'firebase/database';
 
 const firebaseConfig = {
@@ -19,3 +24,16 @@ if (import.meta.env.VITE_USE_EMULATOR === 'true') {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectDatabaseEmulator(db, '127.0.0.1', 9000);
 }
+
+// 앱 로드 시 익명 로그인 보장.
+// RTDB 보안 규칙이 모든 읽기/쓰기에 auth != null 을 요구하므로,
+// 어떤 화면이든 데이터에 접근하기 전에 인증이 끝나 있어야 한다.
+export const authReady: Promise<void> = new Promise((resolve) => {
+  const unsub = onAuthStateChanged(auth, (user) => {
+    if (user) {
+      unsub();
+      resolve();
+    }
+  });
+  signInAnonymously(auth).catch((e) => console.error('익명 로그인 실패', e));
+});

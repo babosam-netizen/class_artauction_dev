@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react';
 import { onValue, ref } from 'firebase/database';
-import { db } from './app';
+import { auth, authReady, db } from './app';
+
+/** 익명 로그인이 완료됐는지 여부. 데이터 접근 전 게이트로 사용. */
+export function useAuthReady(): boolean {
+  const [ready, setReady] = useState<boolean>(() => auth.currentUser != null);
+  useEffect(() => {
+    let mounted = true;
+    authReady.then(() => mounted && setReady(true));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return ready;
+}
 
 /** RTDB 단일 경로를 구독해 값을 반환. path가 null이면 구독하지 않음. */
 export function useRtdbValue<T>(path: string | null): T | undefined {
