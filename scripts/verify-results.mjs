@@ -28,12 +28,15 @@ const ok = (m) => console.log('  ✓', m);
 
 async function main() {
   const app = initializeApp(config);
-  await signInAnonymously(getAuth(app));
+  const cred = await signInAnonymously(getAuth(app));
   const db = getDatabase(app);
   ok('익명 인증');
 
   const code = 'RES' + Math.floor(Math.random() * 9000 + 1000);
   const sPath = `sessions/${code}`;
+  await set(ref(db, sPath), {
+    meta: { code, teacherUid: cred.user.uid, gradeBand: '3-4', createdAt: Date.now() },
+  });
   await set(ref(db, `${sPath}/groups`), {
     g1: { id: 'g1', name: '1모둠', remainingBudget: 600000, wonItems: { art1: 400000 } },
     g2: { id: 'g2', name: '2모둠', remainingBudget: 1000000, wonItems: {} },

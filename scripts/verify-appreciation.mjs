@@ -40,13 +40,15 @@ async function main() {
   const app = initializeApp(config);
   const auth = getAuth(app);
   const db = getDatabase(app);
-  await signInAnonymously(auth);
+  const cred = await signInAnonymously(auth);
   ok('익명 인증');
 
   const code = genCode();
   const sPath = `sessions/${code}`;
-  await set(ref(db, `${sPath}/meta`), { code, gradeBand: '3-4', createdAt: Date.now() });
-  await set(ref(db, `${sPath}/state`), { phase: 'gallery' });
+  await set(ref(db, sPath), {
+    meta: { code, teacherUid: cred.user.uid, gradeBand: '3-4', createdAt: Date.now() },
+    state: { phase: 'gallery' },
+  });
 
   // 작품 추가 (공통회랑)
   const artRef = push(ref(db, `${sPath}/artworks`));

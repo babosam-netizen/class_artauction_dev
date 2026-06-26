@@ -57,12 +57,15 @@ function incBidTxn(itemRef, groupId) {
 
 async function main() {
   const app = initializeApp(config);
-  await signInAnonymously(getAuth(app));
+  const cred = await signInAnonymously(getAuth(app));
   const db = getDatabase(app);
   ok('익명 인증');
 
   const code = 'TEST' + Math.floor(Math.random() * 9000 + 1000);
   const sPath = `sessions/${code}`;
+  await set(ref(db, sPath), {
+    meta: { code, teacherUid: cred.user.uid, gradeBand: '3-4', createdAt: Date.now() },
+  });
   const itemRef = ref(db, `${sPath}/auction/items/art1`);
   await set(ref(db, `${sPath}/groups/g1`), { id: 'g1', name: '1모둠', remainingBudget: 1000000, wonItems: {} });
   await set(ref(db, `${sPath}/groups/g2`), { id: 'g2', name: '2모둠', remainingBudget: 1000000, wonItems: {} });

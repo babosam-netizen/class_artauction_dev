@@ -3,7 +3,69 @@
     "sessions": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null && (!data.exists() ? newData.child('meta/teacherUid').val() === auth.uid : data.child('meta/teacherUid').val() === auth.uid)",
+
+        "meta": {
+          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['code', 'teacherUid', 'gradeBand'])",
+          "teacherUid": { ".validate": "newData.val() === auth.uid" }
+        },
+
+        "state": {
+          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid",
+          "phase": { ".validate": "newData.isString()" }
+        },
+
+        "content": {
+          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid"
+        },
+
+        "artworks": {
+          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid"
+        },
+
+        "results": {
+          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid"
+        },
+
+        "students": {
+          "$number": {
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['number', 'name'])"
+          }
+        },
+
+        "appreciations": {
+          "$number": {
+            "$artworkId": {
+              ".write": "auth != null",
+              ".validate": "newData.hasChild('answers')"
+            }
+          }
+        },
+
+        "groups": {
+          "$groupId": {
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['id', 'name'])"
+          }
+        },
+
+        "auction": {
+          "items": {
+            "$artworkId": {
+              ".write": "auth != null",
+              ".validate": "newData.hasChildren(['artworkId', 'status'])"
+            }
+          },
+          "bids": {
+            ".indexOn": ["at"],
+            "$bidId": {
+              ".write": "auth != null",
+              ".validate": "newData.hasChildren(['groupId', 'amount']) && newData.child('amount').isNumber()"
+            }
+          }
+        }
       }
     }
   }
