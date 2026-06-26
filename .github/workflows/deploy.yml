@@ -1,0 +1,35 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    env:
+      # Firebase 웹 config — 비밀이 아님(이미 공개 번들에 포함). 보안은 RTDB 규칙으로 처리.
+      VITE_FIREBASE_API_KEY: AIzaSyBVk3TyLqFJao3Ja61mOJPXqnlGJ1_Vu68
+      VITE_FIREBASE_AUTH_DOMAIN: art-auction-8552.firebaseapp.com
+      VITE_FIREBASE_DATABASE_URL: https://art-auction-8552-default-rtdb.firebaseio.com
+      VITE_FIREBASE_PROJECT_ID: art-auction-8552
+      VITE_FIREBASE_APP_ID: 1:419858101172:web:6b0846c4cb2a9f2f5d38e1
+      VITE_USE_EMULATOR: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: b61f6123aabece0cf4825b3996b6a9c3
+          command: pages deploy dist --project-name art-auction --branch main
