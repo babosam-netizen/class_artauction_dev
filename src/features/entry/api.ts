@@ -12,6 +12,7 @@ export async function joinSession(
   code: string,
   number: string,
   name: string,
+  groupId: string,
 ): Promise<Student> {
   const cred = await signInAnonymously(auth);
   const uid = cred.user.uid;
@@ -21,14 +22,14 @@ export async function joinSession(
   const existing = await get(studentRef);
   if (existing.exists()) {
     const prev = existing.val() as Student;
-    await update(studentRef, { name, uid, lastSeenAt: now });
-    return { ...prev, name, uid, lastSeenAt: now };
+    await update(studentRef, { name, uid, groupId, lastSeenAt: now });
+    return { ...prev, name, uid, groupId, lastSeenAt: now };
   }
 
   const student: Student = {
     number,
     name,
-    groupId: '', // 모둠 배정은 이후 단계
+    groupId,
     isRep: false,
     uid,
     joinedAt: now,

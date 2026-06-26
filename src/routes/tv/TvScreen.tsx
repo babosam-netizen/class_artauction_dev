@@ -3,6 +3,7 @@ import { MuseumShell } from '@/components/MuseumShell';
 import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { PHASE_LABELS } from '@/features/session/api';
+import { TvAuctionView } from '@/features/auction/TvAuctionView';
 import type { SessionState } from '@/models';
 
 const GOLD = '#c4975a';
@@ -40,6 +41,11 @@ export function TvScreen() {
   }
 
   const phase = state?.phase ?? 'lobby';
+
+  if (phase === 'auction') {
+    return <TvAuctionView code={code} />;
+  }
+
   return (
     <MuseumShell title="경매장" route="/tv">
       <div className="mt-6 text-center">

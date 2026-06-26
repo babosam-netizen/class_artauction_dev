@@ -4,6 +4,7 @@ import { auth, db } from '@/firebase/app';
 import { paths } from '@/firebase/paths';
 import type {
   GradeBand,
+  Group,
   GroupAssignMode,
   Phase,
   SessionContent,
@@ -86,7 +87,19 @@ export async function createSession(params: CreateSessionParams): Promise<string
     prompts: DEFAULT_PROMPTS[params.gradeBand],
   };
 
-  await set(ref(db, paths.session(code)), { meta, state, content });
+  // 모둠 자동 생성 (모두 동일 시작 자금)
+  const groups: Record<string, Group> = {};
+  for (let i = 1; i <= params.groupCount; i++) {
+    const id = `g${i}`;
+    groups[id] = {
+      id,
+      name: `${i}모둠`,
+      remainingBudget: params.startingFunds,
+      wonItems: {},
+    };
+  }
+
+  await set(ref(db, paths.session(code)), { meta, state, content, groups });
   return code;
 }
 
