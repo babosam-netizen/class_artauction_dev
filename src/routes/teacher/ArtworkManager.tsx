@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { addArtwork, removeArtwork, placementLabel, sortByOrder } from '@/features/artwork/api';
+import { uploadImage, loadImageServerUrl, saveImageServerUrl } from '@/features/artwork/upload';
 import type { Artwork, Placement } from '@/models';
 
 const GOLD = '#c4975a';
@@ -24,8 +25,29 @@ export function ArtworkManager({ code, branchDoorCount }: Props) {
   const [door, setDoor] = useState(0);
   const [forAuction, setForAuction] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [serverUrl, setServerUrl] = useState(loadImageServerUrl());
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const canAdd = imageUrl.trim() && title.trim() && appraisedValue.trim();
+
+  async function handleUpload(file: File | undefined) {
+    if (!file) return;
+    if (!serverUrl.trim()) {
+      setUploadError('먼저 이미지 서버 주소를 입력하세요');
+      return;
+    }
+    setUploading(true);
+    setUploadError('');
+    try {
+      const url = await uploadImage(serverUrl.trim(), file);
+      setImageUrl(url);
+    } catch {
+      setUploadError('업로드 실패 — 서버 주소와 실행 상태를 확인하세요');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleAdd() {
     setBusy(true);
@@ -67,12 +89,47 @@ export function ArtworkManager({ code, branchDoorCount }: Props) {
         작품 관리 ({artworks.length})
       </div>
 
+      {/* 이미지 서버(맥스튜디오 터널) 설정 + 업로드 */}
+      <div
+        className="mb-3 flex flex-col gap-2 rounded border p-3"
+        style={{ borderColor: 'rgba(196,167,90,0.15)' }}
+      >
+        <input
+          value={serverUrl}
+          onChange={(e) => {
+            setServerUrl(e.target.value);
+            saveImageServerUrl(e.target.value);
+          }}
+          placeholder="이미지 서버 주소 (https://...trycloudflare.com)"
+          className={inputCls}
+          style={inputStyle}
+        />
+        <label
+          className="cursor-pointer rounded-full border px-4 py-2 text-center text-sm"
+          style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.13)', color: '#ead9b8' }}
+        >
+          {uploading ? '업로드 중…' : '📤 이미지 업로드'}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => handleUpload(e.target.files?.[0])}
+          />
+        </label>
+        {uploadError && (
+          <div className="text-xs" style={{ color: 'rgba(224,160,160,0.9)' }}>
+            {uploadError}
+          </div>
+        )}
+      </div>
+
       {/* 추가 폼 */}
       <div className="flex flex-col gap-2">
         <input
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="이미지 URL (붙여넣기)"
+          placeholder="이미지 URL (붙여넣기 또는 위에서 업로드)"
           className={inputCls}
           style={inputStyle}
         />

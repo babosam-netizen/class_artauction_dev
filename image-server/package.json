@@ -1,0 +1,15 @@
+{
+  "name": "art-auction-image-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "맥스튜디오/NAS에서 작품 이미지를 받아 저장·제공하는 로컬 업로드 서버. cloudflared로 HTTPS 공개.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^2.0.1"
+  }
+}

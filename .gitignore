@@ -20,3 +20,7 @@ dist/
 firebase-debug.log
 database-debug.log
 ui-debug.log
+
+# Image server
+image-server/node_modules/
+image-server/uploads/
