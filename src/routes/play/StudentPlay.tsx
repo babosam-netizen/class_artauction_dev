@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { MuseumShell } from '@/components/MuseumShell';
-import { useRtdbValue } from '@/firebase/hooks';
+import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { joinSession } from '@/features/entry/api';
 import { sessionExists, PHASE_LABELS } from '@/features/session/api';
-import type { SessionState } from '@/models';
+import { sortByOrder } from '@/features/artwork/api';
+import { GalleryView } from '@/features/appreciation/GalleryView';
+import { DEFAULT_PROMPTS } from '@/content/prompts';
+import type { Artwork, SessionContent, SessionMeta, SessionState } from '@/models';
 
 const GOLD = '#c4975a';
 const BORDER = 'rgba(196,167,90,0.4)';
@@ -22,8 +25,6 @@ export function StudentPlay() {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  const state = useRtdbValue<SessionState>(joined ? paths.state(joined.code) : null);
 
   async function handleJoin() {
     setBusy(true);
@@ -89,7 +90,37 @@ export function StudentPlay() {
     );
   }
 
+  return <StudentSession joined={joined} />;
+}
+
+function StudentSession({ joined }: { joined: Joined }) {
+  const state = useRtdbValue<SessionState>(paths.state(joined.code));
+  const meta = useRtdbValue<SessionMeta>(paths.meta(joined.code));
+  const content = useRtdbValue<SessionContent>(paths.content(joined.code));
+  const artworks = useRtdbList<Artwork>(paths.artworks(joined.code));
+
   const phase = state?.phase ?? 'lobby';
+
+  if (phase === 'gallery' && meta) {
+    const gradeBand = meta.gradeBand;
+    const prompts =
+      content?.prompts && content.prompts.length > 0
+        ? content.prompts
+        : DEFAULT_PROMPTS[gradeBand];
+    const common = sortByOrder(artworks.filter((a) => a.placement?.kind === 'common'));
+    return (
+      <GalleryView
+        code={joined.code}
+        studentNumber={joined.number}
+        studentName={joined.name}
+        gradeBand={gradeBand}
+        prompts={prompts}
+        artworks={common}
+      />
+    );
+  }
+
+  // 그 외 단계: 대기 화면
   return (
     <MuseumShell title={`${joined.name} 님`} route="/play">
       <div className="mt-6 text-center">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MuseumShell } from '@/components/MuseumShell';
+import { ArtworkManager } from './ArtworkManager';
 import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import {
@@ -9,7 +10,7 @@ import {
   prevPhase,
   PHASE_LABELS,
 } from '@/features/session/api';
-import type { GradeBand, SessionState } from '@/models';
+import type { GradeBand, SessionMeta, SessionState } from '@/models';
 
 const GOLD = '#c4975a';
 
@@ -18,6 +19,7 @@ export function TeacherConsole() {
   const [gradeBand, setGradeBand] = useState<GradeBand>('3-4');
   const [busy, setBusy] = useState(false);
   const state = useRtdbValue<SessionState>(code ? paths.state(code) : null);
+  const meta = useRtdbValue<SessionMeta>(code ? paths.meta(code) : null);
 
   async function handleCreate() {
     setBusy(true);
@@ -99,6 +101,8 @@ export function TeacherConsole() {
             다음 단계 →
           </button>
         </div>
+
+        <ArtworkManager code={code} branchDoorCount={meta?.branchDoorCount ?? 4} />
       </div>
     </MuseumShell>
   );
