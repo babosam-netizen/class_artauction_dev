@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<!-- ══════════════════════════════════════════
+     전체 흐름도
+══════════════════════════════════════════ -->
+<div style="position:absolute;left:80px;top:80px;width:1480px">
+  <div data-drags-parent="1" style="font:700 14px Caveat,cursive;color:#7a5c2e;margin-bottom:6px">🗺 전체 앱 흐름도</div>
+  <div style="background:#fffdf9;border:2.5px solid #2d2d2d;border-radius:4px;padding:20px 24px">
+
+    <!-- 학생 행 -->
+    <div style="display:flex;align-items:center;gap:0;margin-bottom:14px">
+      <div style="font:700 12px Caveat,cursive;background:#f0e6d0;border:1.5px solid #c4975a;border-radius:3px;padding:4px 10px;color:#6b3e00;white-space:nowrap;margin-right:14px">📱 학생</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <div style="background:#fff;border:2px solid #2d2d2d;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">접속<br><span style="font:400 10px Caveat,cursive;color:#888">코드+이름</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#fff;border:2px solid #2d2d2d;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">로비<br><span style="font:400 10px Caveat,cursive;color:#888">단계 대기</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#e8f4e8;border:2px solid #2d2d2d;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">공통회랑<br><span style="font:400 10px Caveat,cursive;color:#888">감상+기록</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#e8f4e8;border:2px solid #2d2d2d;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">분기 선택<br><span style="font:400 10px Caveat,cursive;color:#888">1~4번 문</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#e8f4e8;border:2px solid #2d2d2d;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">분기 감상<br><span style="font:400 10px Caveat,cursive;color:#888">성취기준 답변</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#e8eef8;border:2px solid #2d2d2d;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">경매 대기<br><span style="font:400 10px Caveat,cursive;color:#888">소지금 확인</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#e8eef8;border:2px solid #2d2d2d;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">입찰 참여<br><span style="font:400 10px Caveat,cursive;color:#888">가격 입력</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#f8eee8;border:2px solid #2d2d2d;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">결과 확인<br><span style="font:400 10px Caveat,cursive;color:#888">최종 순위</span></div>
+      </div>
+    </div>
+
+    <!-- 교사 행 -->
+    <div style="display:flex;align-items:center;gap:0">
+      <div style="font:700 12px Caveat,cursive;background:#f0e6d0;border:1.5px solid #c4975a;border-radius:3px;padding:4px 10px;color:#6b3e00;white-space:nowrap;margin-right:14px">💻 교사</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <div style="background:#fff5e0;border:2px solid #c4975a;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">수업 설정<br><span style="font:400 10px Caveat,cursive;color:#888">작품·학년·예산</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#fff5e0;border:2px solid #c4975a;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">단계 제어<br><span style="font:400 10px Caveat,cursive;color:#888">회랑 열기/닫기</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#fff5e0;border:2px solid #c4975a;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">경매 진행<br><span style="font:400 10px Caveat,cursive;color:#888">TV 화면 공유</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#fff5e0;border:2px solid #c4975a;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">결과 발표<br><span style="font:400 10px Caveat,cursive;color:#888">실제가 공개</span></div>
+        <div style="font:700 18px Caveat,cursive;color:#c4975a">→</div>
+        <div style="background:#fff5e0;border:2px solid #c4975a;border-radius:3px;padding:7px 12px;font:600 12px Caveat,cursive;text-align:center">감상 확인<br><span style="font:400 10px Caveat,cursive;color:#888">수행평가 다운로드</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ 섹션: 학생 화면 ══ -->
+<div style="position:absolute;left:80px;top:340px;font:700 17px Caveat,cursive;color:#c4975a;padding-bottom:4px;border-bottom:2px solid #c4975a;width:220px">📱 학생 화면 (태블릿)</div>
+
+<!-- ① 학생 로그인 -->
+<div style="position:absolute;left:80px;top:380px;width:278px">
+  <div data-drags-parent="1" style="font:700 12px Caveat,cursive;color:rgba(60,45,20,.7);margin-bottom:5px">① 접속 / 로그인</div>
+  <div style="background:#fffdf9;border:2.5px solid #2d2d2d;border-radius:4px;overflow:hidden">
+    <div style="background:#2d2d2d;height:22px;display:flex;align-items:center;padding:0 10px">
+      <span style="font:400 9px Caveat,cursive;color:#fff">🏛 미술 감상 경매</span>
+    </div>
+    <div style="padding:18px">
+      <div style="background:#e8d5b0;border:1.5px dashed #aaa;height:70px;border-radius:3px;display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <span style="font:600 12px Caveat,cursive;color:#888">🎨 미술관 로고 / 일러스트</span>
+      </div>
+      <div style="font:700 15px Caveat,cursive;text-align:center;margin-bottom:18px;color:#2d2d2d">미술관에 오신 걸 환영해요!</div>
+      <div style="font:600 11px Caveat,cursive;color:#555;margin-bottom:4px">교사 접속 코드</div>
+      <div style="border:2px solid #2d2d2d;border-radius:3px;padding:8px 10px;font:400 12px Caveat,cursive;color:#bbb;margin-bottom:10px">예) ABC123</div>
+      <div style="font:600 11px Caveat,cursive;color:#555;margin-bottom:4px">내 번호와 이름</div>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <div style="border:2px solid #2d2d2d;border-radius:3px;padding:8px;font:400 12px Caveat,cursive;color:#bbb;width:56px;text-align:center">번호</div>
+        <div style="border:2px solid #2d2d2d;border-radius:3px;padding:8px;font:400 12px Caveat,cursive;color:#bbb;flex:1">이름</div>
+      </div>
+      <div style="background:#2d2d2d;color:#fff;border-radius:3px;padding:10px;text-align:center;font:700 13px Caveat,cursive">🚪 미술관 입장하기</div>
+    </div>
+  </div>
+</div>
+
+<!-- ② 미술관 로비 -->
+<div style="position:absolute;left:418px;top:380px;width:278px">
+  <div data-drags-parent="1" style="font:700 12px Caveat,cursive;color:rgba(60,45,20,.7);margin-bottom:5px">② 미술관 로비</div>
+  <div style="background:#fffdf9;border:2.5px solid #2d2d2d;border-radius:4px;overflow:hidden">
+    <div style="background:#2d2d2d;height:22px;display:flex;align-items:center;justify-content:space-between;padding:0 10px">
+      <span style="font:400 9px Caveat,cursive;color:#fff">🏛 로비</span>
+      <span style="font:400 9px Caveat,cursive;color:#c4975a">💰 1,000원 · 3모둠</span>
+    </div>
+    <div style="padding:14px">
+      <div style="background:linear-gradient(160deg,#e8d5b0,#d4c09a);height:90px;border-radius:3px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;position:relative">
+        <span style="font:50px Caveat,cursive">🏛</span>
+        <div style="position:absolute;bottom:6px;font:400
+</x-dc>
+</body>
+</html>

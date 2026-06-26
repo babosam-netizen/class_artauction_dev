@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    @keyframes panelIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes fadeUp  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</helmet>
+
+<div style="width:100%;height:100vh;overflow:hidden;position:relative;background:#130e08;display:flex;font-family:'Noto Sans KR',sans-serif">
+
+  <!-- 벽 깊이감 그라디언트 -->
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 110% 90% at 50% 28%, #2e1e10 0%, #0c0804 100%);pointer-events:none;z-index:0"></div>
+
+  <!-- 스포트라이트 -->
+  <div style="{{ spotlightStyle }}"></div>
+
+  <!-- 상단 몰딩 -->
+  <div style="position:absolute;top:0;left:0;right:0;height:32px;background:linear-gradient(to bottom,rgba(196,167,90,0.13),transparent);border-bottom:1px solid rgba(196,167,90,0.12);z-index:2;pointer-events:none"></div>
+
+  <!-- 하단 바닥선 -->
+  <div style="position:absolute;bottom:0;left:0;right:0;height:130px;background:linear-gradient(to top,#070503 0%,transparent 100%);z-index:0;pointer-events:none"></div>
+  <div style="position:absolute;bottom:108px;left:0;right:0;height:1px;background:rgba(196,167,90,0.1);z-index:1;pointer-events:none"></div>
+
+  <!-- ─── 작품 감상 영역 ─── -->
+  <div style="{{ artworkAreaStyle }}">
+
+    <!-- 이전 작품 화살표 -->
+    <div onClick="{{ prevArtwork }}" style="position:absolute;left:28px;top:50%;transform:translateY(-50%);z-index:4;cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(196,167,90,0.25);border-radius:50%;transition:all 0.25s;background:rgba(0,0,0,0.2)" style-hover="border-color:rgba(196,167,90,0.8);background:rgba(196,167,90,0.1)">
+      <span style="color:rgba(220,190,130,0.65);font-size:26px;line-height:1;margin-left:-2px">‹</span>
+    </div>
+
+    <!-- 다음 작품 화살표 -->
+    <div onClick="{{ nextArtwork }}" style="position:absolute;right:28px;top:50%;transform:translateY(-50%);z-index:4;cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(196,167,90,0.25);border-radius:50%;transition:all 0.25s;background:rgba(0,0,0,0.2)" style-hover="border-color:rgba(196,167,90,0.8);background:rgba(196,167,90,0.1)">
+      <span style="color:rgba(220,190,130,0.65);font-size:26px;line-height:1;margin-right:-2px">›</span>
+    </div>
+
+    <!-- ── 액자 + 작품 ── -->
+    <div style="position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;animation:fadeUp 0.5s ease">
+
+      <!-- 황금 액자 -->
+      <div style="{{ frameStyle }}">
+        <div style="border:3px solid rgba(50,32,4,0.7);padding:4px;background:#0e0903">
+          <!-- 작품 이미지 플레이스홀더 -->
+          <div style="{{ artworkStyle }}">
+            <div style="position:absolute;inset:0;background:{{ current.artBg }}"></div>
+            <!-- 미세한 캔버스 텍스처 -->
+            <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px),repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px)"></div>
+            <div style="position:relative;z-index:1;text-align:center;opacity:0.22">
+              <div style="font:400 52px serif;color:#fff;line-height:1">🖼</div>
+              <div style="font:300 10px 'Noto Sans KR',sans-serif;color:#fff;letter-spacing:3px;margin-top:6px">작품 이미지</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 액자 아래 그림자 (바닥에 비친 느낌) -->
+      <div style="width:{{ artW }}px;height:18px;background:radial-gradient(ellipse at center,rgba(0,0,0,0.85) 0%,transparent 100%);transform:scaleY(0.35);margin-top:4px;opacity:0.7"></div>
+
+      <!-- 작품 정보 -->
+      <div style="text-align:center;margin-top:18px;animation:fadeUp 0.5s ease 0.1s both">
+        <div style="font:italic 400 22px 'Cormorant Garamond',serif;color:#ead9b8;letter-spacing:0.5px">{{ current.title }}</div>
+        <div style="font:300 12px 'Noto Sans KR',sans-serif;color:rgba(196,167,90,0.55);margin-top:5px;letter-spacing:1.5px">{{ current.artist }}, {{ current.year }}</div>
+
+        <!-- 진행 도트 -->
+        <div style="display:flex;gap:7px;justify-content:center;margin-top:16px">
+          <sc-for list="{{ progressDots }}" as="dot" hint-placeholder-count="3">
+            <div style="{{ dot.style }}"></div>
+          </sc-for>
+        </div>
+
+        <!-- 감상 기록 버튼 -->
+        <div onClick="{{ togglePanel }}" style="margin-top:22px;display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(196,167,90,0.4);border-radius:28px;padding:11px 24px;cursor:pointer;transition:all 0.25s;color:rgba(220,190,130,0.8);font:400 13px 'Noto Sans KR',sans-serif;background:rgba(196,167,90,0.07);letter-spacing:0.5px" style-hover="background:rgba(196,167,90,0.18);border-color:rgba(196,167,90,0.9);color:#ead9b8">
+          <span style="font-size:14px">✏️</span>
+          <span>{{ btnLabel }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── 감상 기록 패널 ─── -->
+  <sc-if value="{{ open }}" hint-placeholder-val="{{ false }}">
+    <div style="width:360px;min-width:360px;background:#1c120a;border-left:1px solid rgba(196,167,90,0.18);display:flex;flex-direction:column;z-index:5;position:relative;animation:panelIn 0.35s ease">
+
+      <!-- 패널 헤더 -->
+      <div style="padding:28px 24px 18px;border-bottom:1px solid rgba(196,167,90,0.12)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font:500 10px 'Noto Sans KR',sans-serif;color:rgba(196,167,90,0.6);letter-spacing:2px;margin-bottom:6px">나의 감상 기록</div>
+            <div style="font:italic 400 17px 'Cormorant Garamond',serif;color:#ead9b8">{{ current.title }}</div>
+            <div style="font:300 11px 'Noto Sans KR',sans-serif;color:rgba(196,167,90,0.4);margin-top:3px">{{ current.artist }}</div>
+          </div>
+          <div onClick="{{ togglePanel }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(196,167,90,0.4);font-size:20px;border-radius:50%;transition:all 0.2s;margin-top:-4px" style-hover="color:#c4975a;background:rgba(196,167,90,0.12)">×</div>
+        </div>
+      </div>
+
+      <!-- 성취기준 질문 -->
+      <div style="padding:20px 24px 16px">
+        <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(196,167,90,0.1);border-radius:4px;padding:5px 10px;margin-bottom:14px">
+          <span style="font:500 10px 'Noto Sans KR',sans-serif;color:#c4975a;letter-spacing:0.5px">{{ current.gradeLabel }}</span>
+        </div>
+        <div style="font:300 13px/1.85 'Noto Sans KR',sans-serif;color:rgba(232,217,184,0.82)">{{ current.question }}</div>
+      </div>
+
+      <!-- 구분선 -->
+      <div style="height:1px;background:rgba(196,167,90,0.1);margin:0 24px"></div>
+
+      <!-- 텍스트 입력 영역 -->
+      <div style="flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:12px;overflow:auto">
+        <div style="font:400 11px 'Noto Sans KR',sans-serif;color:rgba(196,167,90,0.45);letter-spacing:0.5px">내 생각을 자유롭게 써보세요</div>
+        <textarea rows="8" placeholder="여기에 감상을 적어보세요..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(196,167,90,0.2);border-radius:4px;padding:14px;font:300 13px/1.7 'Noto Sans KR',sans-serif;color:rgba(232,217,184,0.85);resize:none;outline:none;min-height:140px;color-scheme:dark" onfocus="this.style.borderColor='rgba(196,167,90,0.5)'" onblur="this.style.borderColor='rgba(196,167,90,0.2)'"></textarea>
+
+        <!-- 저장 버튼 -->
+        <div style="background:rgba(196,167,90,0.13);border:1px solid rgba(196,167,90,0.38);border-radius:4px;padding:13px;text-align:center;cursor:pointer;font:500 13px 'Noto Sans KR',sans-serif;color:#c4975a;transition:all 0.2s;letter-spacing:0.5px" style-hover="background:rgba(196,167,90,0.28);border-color:#c4975a">
+          저장하기
+        </div>
+        <div style="font:300 11px 'Noto Sans KR',sans-serif;color:rgba(196,167,90,0.3);text-align:center;letter-spacing:0.3px">수행평가 기록으로 저장됩니다</div>
+      </div>
+
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1024, &quot;height&quot;: 768}}">
+class Component extends DCLogic {
+  state = { open: false, index: 0 };
+
+  renderVals() {
+    const { open, index } = this.state;
+
+    const artworks = [
+      {
+        title: "수련 (Water Lilies)",
+        artist: "클로드 모네",
+        year: "1906",
+        gradeLabel: "💬 감상 질문 · 3~4학년",
+        question: "이 작품에서 가장 눈에 띄거나 재미있다고 생각되는 부분은 어디인가요? 이 작품을 보고 나니 내 마음속에 어떤 생각이나 기분이 들었는지 자유롭게 이야기해 볼까요?",
+        artBg: "linear-gradient(145deg, #1b4332 0%, #2d6a4f 25%, #52b788 45%, #95d5b2 55%, #40916c 70%, #1b4332 100%)"
+      },
+      {
+        title: "별이 빛나는 밤 (The Starry Night)",
+        artist: "빈센트 반 고흐",
+        year: "1889",
+        gradeLabel: "💬 감상 질문 · 3~4학년",
+        question: "이 작품을 구석구석 자세히 관찰해 볼까요? 만약 이 그림을 그린 화가 선생님을 직접 만날 수 있다면, 어떤 것이 가장 먼저 물어보고 싶나요?",
+        artBg: "linear-gradient(145deg, #03045e 0%, #023e8a 30%, #0077b6 50%, #90e0ef 60%, #023e8a 75%, #03045e 100%)"
+      },
+      {
+        title: "게르니카 (Guernica)",
+        artist: "파블로 피카소",
+        year: "1937",
+        gradeLabel: "💬 감상 질문 · 5~6학년",
+        question: "작가가 이 작품을 통해 우리에게 전달하고자 하는 가장 중요한 주제는 무엇일까요? 그 주제를 효과적으로 나타내기 위해 어떤 재료와 표현 방법을 선택했는지 꼼꼼히 분석해 볼까요?",
+        artBg: "linear-gradient(145deg, #212529 0%, #495057 25%, #adb5bd 50%, #dee2e6 58%, #6c757d 70%, #212529 100%)"
+      },
+      {
+        title: "진주 귀고리를 한 소녀",
+        artist: "요하네스 베르메르",
+        year: "1665",
+        gradeLabel: "💬 감상 질문 · 5~6학년",
+        question: "이 작품은 어느 시대, 어느 나라에서 만들어졌을까요? 그 당시 사람들의 생활 모습이나 사회적 배경이 작품 속에 어떻게 담겨 있는지 단서를 찾아볼까요?",
+        artBg: "linear-gradient(145deg, #1a1025 0%, #2d1b4e 30%, #4a2c6e 50%, #c9b1d4 60%, #6b3d8a 75%, #1a1025 100%)"
+      }
+    ];
+
+    const total = artworks.length;
+    const current = artworks[index % total];
+
+    // Artwork dimensions — narrower when panel open
+    const artW = open ? 380 : 480;
+    const artH = open ? 290 : 360;
+
+    return {
+      open,
+      current,
+      artW,
+      btnLabel: open ? '닫기' : '감상 기록하기',
+
+      spotlightStyle: {
+        position: 'absolute', inset: 0,
+        background: `radial-gradient(ellipse 52% 62% at ${open ? '36%' : '50%'} 40%, rgba(255,220,140,0.09) 0%, transparent 68%)`,
+        pointerEvents: 'none', zIndex: 0, transition: 'all 0.5s ease'
+      },
+
+      artworkAreaStyle: {
+        flex: 1,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        position: 'relative', zIndex: 2,
+        transition: 'all 0.4s ease'
+      },
+
+      frameStyle: {
+        background: 'linear-gradient(145deg, #d4b862 0%, #8b6010 20%, #c49b38 40%, #7a5010 60%, #c4a040 80%, #8b6010 100%)',
+        padding: '18px',
+        boxShadow: '0 0 0 1.5px rgba(80,50,5,0.9), 0 32px 90px rgba(0,0,0,0.92), 0 8px 30px rgba(0,0,0,0.6), inset 0 0 24px rgba(0,0,0,0.35)',
+        transition: 'all 0.4s ease'
+      },
+
+      artworkStyle: {
+        width: `${artW}px`, height: `${artH}px`,
+        position: 'relative', overflow: 'hidden',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'all 0.4s ease'
+      },
+
+      progressDots: artworks.map((_, i) => ({
+        style: {
+          width: i === index ? '20px' : '6px',
+          height: '6px',
+          borderRadius: '3px',
+          background: i === index ? '#c4975a' : 'rgba(196,150,90,0.28)',
+          transition: 'all 0.35s ease'
+        }
+      })),
+
+      togglePanel: () => this.setState(s => ({ open: !s.open })),
+      prevArtwork: () => this.setState(s => ({ index: Math.max(0, s.index - 1) })),
+      nextArtwork: () => this.setState(s => ({ index: Math.min(total - 1, s.index + 1) }))
+    };
+  }
+}
+</script>
+</body>
+</html>
