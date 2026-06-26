@@ -6,7 +6,12 @@
 ## 1. 설치 (맥스튜디오에서 1회)
 
 ```bash
-cd image-server
+# ⚠️ 저장소가 없을 때만. 홈 디렉터리 등 repo 바깥에서 실행하세요
+#    (image-server 안에서 clone 하면 중첩 복제본이 생깁니다)
+cd ~
+git clone https://github.com/babosam-netizen/class_artauction_dev
+
+cd class_artauction_dev/image-server
 npm install
 
 # cloudflared 설치 (터널용)

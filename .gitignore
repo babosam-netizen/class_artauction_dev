@@ -24,3 +24,4 @@ ui-debug.log
 # Image server
 image-server/node_modules/
 image-server/uploads/
+image-server/class_artauction_dev/
