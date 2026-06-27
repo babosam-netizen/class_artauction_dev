@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArtworkManager } from './ArtworkManager';
 import { ContentEditor } from './ContentEditor';
+import { GroupSettings } from './GroupSettings';
 import { TeacherAuctionPanel } from '@/features/auction/TeacherAuctionPanel';
 import { TeacherResultPanel } from '@/features/results/TeacherResultPanel';
 import { StageNavigator } from '@/features/session/StageNavigator';
@@ -220,6 +221,7 @@ export function TeacherConsole() {
               <TeacherResultPanel code={code} gradeBand={meta.gradeBand} />
             ) : (
               <div className="flex flex-col gap-4">
+                {isSetup && <GroupSettings code={code} />}
                 {isSetup && <ContentEditor code={code} />}
                 <ArtworkManager code={code} branchDoorCount={meta?.branchDoorCount ?? 4} />
               </div>
