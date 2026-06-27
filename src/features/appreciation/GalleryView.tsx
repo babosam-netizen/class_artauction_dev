@@ -87,7 +87,9 @@ export function GalleryView({
     );
   }
 
-  const artW = open ? 360 : 460;
+  // 작품을 화면 최대로 (패널 열리면 살짝 축소)
+  const boxH = open ? '44vh' : '62vh';
+  const boxW = open ? 'min(62vh, calc(100vw - 430px))' : 'min(86vh, 90vw)';
   const answeredCount = answers.filter((a) => a.trim()).length;
   const allAnswered = qCount > 0 && answers.every((a) => a.trim().length > 0);
 
@@ -140,7 +142,7 @@ export function GalleryView({
             }}
           >
             <div style={{ border: '3px solid rgba(50,32,4,0.7)', padding: 4, background: '#0e0903' }}>
-              <div style={{ width: artW, height: artW * 0.72, overflow: 'hidden', background: '#0e0903', transition: 'all 0.4s ease' }}>
+              <div style={{ width: boxW, height: boxH, overflow: 'hidden', background: '#0e0903', transition: 'all 0.4s ease' }}>
                 {current.imageUrl ? (
                   <img src={current.imageUrl} alt={current.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 ) : (

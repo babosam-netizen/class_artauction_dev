@@ -24,14 +24,8 @@ export function generateCode(len = 6): string {
   return out;
 }
 
-export const PHASE_ORDER: Phase[] = [
-  'lobby',
-  'prologue',
-  'gallery',
-  'branch',
-  'auction',
-  'result',
-];
+// 프롤로그가 첫 단계 (입장 직후 바로 서사). lobby는 레거시(순서에서 제외).
+export const PHASE_ORDER: Phase[] = ['prologue', 'gallery', 'branch', 'auction', 'result'];
 
 export const PHASE_LABELS: Record<Phase, string> = {
   lobby: '로비 (대기)',
@@ -81,7 +75,7 @@ export async function createSession(params: CreateSessionParams): Promise<string
     groupCount: params.groupCount,
     createdAt: Date.now(),
   };
-  const state: SessionState = { phase: 'lobby' };
+  const state: SessionState = { phase: 'prologue' };
   const content: SessionContent = {
     prologue: DEFAULT_PROLOGUE[params.gradeBand],
     prompts: DEFAULT_PROMPTS[params.gradeBand],

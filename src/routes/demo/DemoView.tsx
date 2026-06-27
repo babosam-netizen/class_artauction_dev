@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryView } from '@/features/appreciation/GalleryView';
 import { PrologueView } from '@/features/prologue/PrologueView';
+import { DemoAuction } from '@/features/auction/DemoAuction';
 import { SAMPLE_ARTWORKS } from '@/content/sampleArtworks';
 import { DEFAULT_PROMPTS } from '@/content/prompts';
 import { DEFAULT_PROLOGUE } from '@/content/prologue';
@@ -31,6 +32,8 @@ export function DemoView() {
     screen = (
       <GalleryView code="demo" studentNumber="0" studentName="미리보기" gradeBand={grade} prompts={prompts} artworks={branch} demo phase="branch" />
     );
+  } else if (phase === 'auction') {
+    screen = <DemoAuction />;
   } else {
     screen = <DescribeScreen phase={phase} />;
   }
