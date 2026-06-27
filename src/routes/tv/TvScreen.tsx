@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { MuseumShell } from '@/components/MuseumShell';
 import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
-import { PHASE_LABELS } from '@/features/session/api';
 import { TvAuctionView } from '@/features/auction/TvAuctionView';
 import { ResultsView } from '@/features/results/ResultsView';
+import { TvWaiting, TvPrologue, TvGallery, TvBranch } from '@/features/tv/TvViews';
 import type { SessionState } from '@/models';
 
 const GOLD = '#c4975a';
@@ -20,7 +20,7 @@ export function TvScreen() {
 
   if (!code) {
     return (
-      <MuseumShell title="경매장" route="/tv">
+      <MuseumShell title="TV 송출" route="/tv">
         <div className="mt-8 flex w-72 flex-col gap-3">
           <input
             value={input}
@@ -43,22 +43,18 @@ export function TvScreen() {
 
   const phase = state?.phase ?? 'lobby';
 
-  if (phase === 'auction') {
-    return <TvAuctionView code={code} />;
+  switch (phase) {
+    case 'prologue':
+      return <TvPrologue code={code} />;
+    case 'gallery':
+      return <TvGallery code={code} />;
+    case 'branch':
+      return <TvBranch code={code} />;
+    case 'auction':
+      return <TvAuctionView code={code} />;
+    case 'result':
+      return <ResultsView code={code} />;
+    default:
+      return <TvWaiting code={code} />;
   }
-
-  if (phase === 'result') {
-    return <ResultsView code={code} />;
-  }
-
-  return (
-    <MuseumShell title="경매장" route="/tv">
-      <div className="mt-6 text-center">
-        <div className="text-sm tracking-widest text-cream-dim">코드 {code}</div>
-        <div className="mt-4 font-display text-7xl italic" style={{ color: GOLD }}>
-          {PHASE_LABELS[phase]}
-        </div>
-      </div>
-    </MuseumShell>
-  );
 }
