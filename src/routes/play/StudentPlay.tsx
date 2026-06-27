@@ -35,7 +35,9 @@ interface Joined {
 export function StudentPlay() {
   const [joined, setJoined] = useState<Joined | null>(null);
   const [stage, setStage] = useState<'info' | 'group'>('info');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(
+    () => new URLSearchParams(window.location.search).get('code')?.toUpperCase() ?? '',
+  );
   const [number, setNumber] = useState('');
   const [name, setName] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);

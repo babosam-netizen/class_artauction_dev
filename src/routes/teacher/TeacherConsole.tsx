@@ -6,6 +6,7 @@ import { TeacherAuctionPanel } from '@/features/auction/TeacherAuctionPanel';
 import { TeacherResultPanel } from '@/features/results/TeacherResultPanel';
 import { StageNavigator } from '@/features/session/StageNavigator';
 import { Dashboard } from '@/features/teacher/Dashboard';
+import { openTv, openStudentQr } from '@/features/teacher/share';
 import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { createSession } from '@/features/session/api';
@@ -97,9 +98,28 @@ export function TeacherConsole() {
               {code}
             </span>
           </div>
-          <div className="flex items-center gap-3 text-xs" style={{ color: 'rgba(232,217,184,0.6)' }}>
-            <span>TV: /tv?code={code}</span>
-            <Link to="/" style={{ color: 'rgba(232,217,184,0.6)' }}>홈</Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openStudentQr(code)}
+              className="rounded-full border px-4 py-2 text-sm"
+              style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.12)', color: '#ead9b8' }}
+            >
+              📱 학생 입장 QR
+            </button>
+            <button
+              onClick={() => openTv(code)}
+              className="rounded-full border px-4 py-2 text-sm"
+              style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.12)', color: '#ead9b8' }}
+            >
+              📺 TV 송출
+            </button>
+            <Link
+              to="/"
+              className="rounded-full border px-3 py-2 text-sm"
+              style={{ borderColor: 'rgba(196,167,90,0.3)', color: 'rgba(232,217,184,0.7)' }}
+            >
+              홈
+            </Link>
           </div>
         </div>
 
