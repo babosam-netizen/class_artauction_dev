@@ -1,0 +1,29 @@
+# 맥 스튜디오(OrbStack/Docker)에서 이미지 서버 + Cloudflare 명명된 터널 상시 운영.
+# - restart: unless-stopped → 부팅/도커 시작 시 자동 기동 (수동 실행 불필요)
+# - 이미지 파일은 DAS 경로(DAS_IMAGES_PATH)에 영구 저장
+# - cloudflared 명명된 터널 → 고정 도메인(예: images.example.com), 주소 안 바뀜
+#
+# .env 파일에 아래 두 값 지정:
+#   DAS_IMAGES_PATH=/Volumes/DAS/art-images
+#   TUNNEL_TOKEN=eyJ...   (Cloudflare Zero Trust → Tunnels에서 발급)
+
+services:
+  image-server:
+    build: .
+    restart: unless-stopped
+    environment:
+      - PORT=8787
+      - UPLOAD_DIR=/data
+    volumes:
+      - ${DAS_IMAGES_PATH:-./uploads}:/data
+    expose:
+      - '8787'
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      - image-server
