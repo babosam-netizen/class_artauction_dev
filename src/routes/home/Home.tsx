@@ -39,9 +39,8 @@ export function Home() {
         </p>
 
         <div className="mt-10 flex flex-wrap items-stretch justify-center gap-5">
-          {card('💻', '교사 입장', '세션 생성 · 진행 · 현황 관리', () => nav('/teacher'), true)}
+          {card('💻', '교사 입장', '세션 생성 · 진행 · 현황 · 데모', () => nav('/teacher'), true)}
           {card('📱', '학생 입장', '코드로 미술관에 들어가기', () => nav('/play'))}
-          {card('👀', '데모 둘러보기', '자료 없이 흐름 미리보기', () => nav('/demo'))}
         </div>
       </div>
     </div>

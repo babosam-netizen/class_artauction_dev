@@ -175,6 +175,13 @@ export function TeacherConsole() {
             </div>
           )}
 
+          <Link
+            to="/demo"
+            className="rounded-xl border px-5 py-3 text-center text-sm"
+            style={{ borderColor: 'rgba(196,167,90,0.3)', background: 'rgba(28,18,10,0.5)', color: '#ead9b8' }}
+          >
+            👀 데모 둘러보기 (교사·학생 화면 미리보기)
+          </Link>
           <Link to="/" className="text-center text-xs" style={{ color: 'rgba(232,217,184,0.5)' }}>← 홈으로</Link>
         </div>
       </div>
