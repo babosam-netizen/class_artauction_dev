@@ -9,6 +9,9 @@ export async function uploadImage(serverBase: string, file: File): Promise<strin
   return `${base}${data.path}`;
 }
 
+// 기본 이미지 서버 (맥 스튜디오 Tailscale Funnel 고정 주소). 교사는 수정 가능.
+export const DEFAULT_IMAGE_SERVER = 'https://soris-mac-studio.tail392e94.ts.net';
+
 const KEY = 'imageServerUrl';
-export const loadImageServerUrl = (): string => localStorage.getItem(KEY) ?? '';
+export const loadImageServerUrl = (): string => localStorage.getItem(KEY) || DEFAULT_IMAGE_SERVER;
 export const saveImageServerUrl = (url: string): void => localStorage.setItem(KEY, url.trim());

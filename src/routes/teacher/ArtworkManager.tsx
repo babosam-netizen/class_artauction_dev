@@ -13,6 +13,7 @@ const inputStyle = { borderColor: BORDER, color: '#ead9b8' };
 export function ArtworkManager({ code }: { code: string }) {
   const artworks = sortByOrder(useRtdbList<Artwork>(paths.artworks(code)));
   const [serverUrl, setServerUrl] = useState(loadImageServerUrl());
+  const [editingServer, setEditingServer] = useState(false);
   const [uploading, setUploading] = useState('');
   const [error, setError] = useState('');
   const [urlInput, setUrlInput] = useState('');
@@ -76,13 +77,37 @@ export function ArtworkManager({ code }: { code: string }) {
 
       {/* 이미지 서버 + 일괄 업로드 */}
       <div className="mb-3 flex flex-col gap-2 rounded border p-3" style={{ borderColor: 'rgba(196,167,90,0.15)' }}>
-        <input
-          value={serverUrl}
-          onChange={(e) => { setServerUrl(e.target.value); saveImageServerUrl(e.target.value); }}
-          placeholder="이미지 서버 주소 (https://...ts.net)"
-          className={inputCls}
-          style={inputStyle}
-        />
+        {editingServer ? (
+          <div className="flex gap-2">
+            <input
+              value={serverUrl}
+              onChange={(e) => setServerUrl(e.target.value)}
+              placeholder="이미지 서버 주소 (https://...ts.net)"
+              className={`${inputCls} flex-1`}
+              style={inputStyle}
+            />
+            <button
+              onClick={() => { saveImageServerUrl(serverUrl); setEditingServer(false); }}
+              className="rounded border px-3 text-sm"
+              style={{ borderColor: GOLD, color: '#ead9b8' }}
+            >
+              저장
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-xs" style={{ color: 'rgba(232,217,184,0.7)' }}>
+              이미지 서버: {serverUrl}
+            </span>
+            <button
+              onClick={() => setEditingServer(true)}
+              className="rounded border px-3 py-1 text-xs"
+              style={{ borderColor: 'rgba(196,167,90,0.4)', color: '#ead9b8' }}
+            >
+              수정
+            </button>
+          </div>
+        )}
         <label className="cursor-pointer rounded-full border px-4 py-2 text-center text-sm" style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.13)', color: '#ead9b8' }}>
           {uploading ? `업로드 중… (${uploading})` : '📤 사진 여러 장 일괄 업로드'}
           <input type="file" accept="image/*" multiple className="hidden" disabled={!!uploading} onChange={(e) => handleFiles(e.target.files)} />
