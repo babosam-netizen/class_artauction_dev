@@ -45,26 +45,37 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
   }, [remaining, current?.artworkId, current?.timerState, current?.timerEndsAt, code]);
 
   const liveOngoing = current && current.status === 'live';
+  const forAuctionCount = artworks.filter((a) => a.forAuction).length;
+  const soldCount = items.filter((i) => i.status === 'sold').length;
+  const passedCount = items.filter((i) => i.status === 'passed').length;
+  const remainCount = items.filter((i) => i.status === 'pending' || i.status === 'passed').length;
 
   return (
     <div
       className="w-full rounded-lg border p-5 text-left"
       style={{ borderColor: 'rgba(196,167,90,0.2)', background: 'rgba(28,18,10,0.6)' }}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-sm font-medium" style={{ color: GOLD }}>
-          경매 진행 ({items.length})
-        </div>
-        {items.length === 0 && (
+      <div className="mb-2 text-sm font-medium" style={{ color: GOLD }}>
+        경매 진행 ({items.length})
+      </div>
+      <div className="mb-3 rounded px-2 py-1.5 text-[11px]" style={{ background: 'rgba(196,167,90,0.08)', color: 'rgba(232,217,184,0.7)' }}>
+        ① 경매 초기화 → ② 작품 올리기 → ③ 타이머 시작 → ④ 시간 내 호가 없으면 자동 낙찰(있으면 연장)
+      </div>
+
+      {items.length === 0 &&
+        (forAuctionCount === 0 ? (
+          <div className="rounded border p-3 text-xs" style={{ borderColor: 'rgba(224,160,160,0.4)', color: 'rgba(224,160,160,0.9)' }}>
+            경매 대상 작품이 없어요. "작품 관리"에서 <b>분기(경매)</b> 작품을 올리거나 <b>경매 대상</b>을 체크한 뒤 다시 오세요.
+          </div>
+        ) : (
           <button
             onClick={() => initAuction(code, artworks)}
-            className="rounded-full border px-4 py-1.5 text-xs"
-            style={{ borderColor: GOLD, color: '#ead9b8' }}
+            className="w-full rounded-full border py-2.5 text-sm"
+            style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.15)', color: '#ead9b8' }}
           >
-            경매 초기화 (랜덤 순서)
+            경매 초기화 — 경매 대상 {forAuctionCount}점 (랜덤 순서로 목록 생성)
           </button>
-        )}
-      </div>
+        ))}
 
       {/* 현재 진행 작품 */}
       {current && (
@@ -111,6 +122,13 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
         </div>
       )}
 
+      {/* 올리기 안내 */}
+      {items.length > 0 && !current && (
+        <div className="mb-2 text-xs" style={{ color: 'rgba(232,217,184,0.7)' }}>
+          아래 목록에서 작품을 <b style={{ color: GOLD }}>올리기</b> 하면 경매가 시작됩니다.
+        </div>
+      )}
+
       {/* 작품 목록 */}
       <div className="flex flex-col gap-1.5">
         {items.map((it) => (
@@ -145,6 +163,13 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
           </div>
         ))}
       </div>
+
+      {items.length > 0 && (
+        <div className="mt-3 text-[11px]" style={{ color: 'rgba(232,217,184,0.6)' }}>
+          낙찰 {soldCount} · 유찰 {passedCount} · 남음 {remainCount}
+          {remainCount === 0 && ' · 경매 종료 → 결과 단계로 넘어가세요'}
+        </div>
+      )}
     </div>
   );
 }
