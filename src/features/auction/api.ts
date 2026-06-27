@@ -1,28 +1,7 @@
-import {
-  ref,
-  set,
-  update,
-  get,
-  push,
-  onValue,
-  runTransaction,
-  type DatabaseReference,
-} from 'firebase/database';
+import { ref, set, update, get, onValue, runTransaction, type DatabaseReference } from 'firebase/database';
 import { db } from '@/firebase/app';
 import { paths } from '@/firebase/paths';
-import { getGroup } from '@/features/group/api';
 import type { Artwork, AuctionItem } from '@/models';
-
-/**
- * 트랜잭션 전 노드에 일시 리스너를 붙여 첫 값을 동기화한다.
- * (활성 리스너가 없으면 runTransaction 첫 실행이 null로 시작해 즉시 abort되는 RTDB 특성 회피)
- * 반환된 unsub을 트랜잭션 후 호출.
- */
-function warmRef(r: DatabaseReference): Promise<() => void> {
-  return new Promise((resolve) => {
-    const unsub = onValue(r, () => resolve(() => unsub()));
-  });
-}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -33,135 +12,102 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+/** 트랜잭션 전 노드에 일시 리스너를 붙여 첫 값을 동기화(널-first-pass abort 회피). */
+function warmRef(r: DatabaseReference): Promise<() => void> {
+  return new Promise((resolve) => {
+    const unsub = onValue(r, () => resolve(() => unsub()));
+  });
+}
+
 /** 경매 대상 작품을 랜덤 순서로 초기화. */
 export async function initAuction(code: string, artworks: Artwork[]): Promise<void> {
   const forAuction = shuffle(artworks.filter((a) => a.forAuction));
   const items: Record<string, AuctionItem> = {};
   forAuction.forEach((a, i) => {
-    items[a.id] = {
-      artworkId: a.id,
-      status: 'pending',
-      currentPrice: 0,
-      timerState: 'idle',
-      order: i,
-    };
+    items[a.id] = { artworkId: a.id, status: 'pending', askingPrice: 0, order: i };
   });
   await set(ref(db, paths.auctionItems(code)), items);
   await update(ref(db, paths.state(code)), { currentAuctionArtworkId: null });
 }
 
-/** 작품을 경매대에 올림(진행). */
-export async function presentArtwork(code: string, artworkId: string): Promise<void> {
+/** 작품을 경매대에 올림. 시작 호가 지정, 참여 초기화. */
+export async function presentArtwork(
+  code: string,
+  artworkId: string,
+  startPrice: number,
+): Promise<void> {
   await update(ref(db, paths.auctionItem(code, artworkId)), {
     status: 'live',
-    currentPrice: 0,
-    highBidGroupId: null,
-    timerState: 'idle',
-    timerEndsAt: null,
+    askingPrice: startPrice,
+    participants: null,
+    winnerGroupId: null,
   });
   await update(ref(db, paths.state(code)), { currentAuctionArtworkId: artworkId });
 }
 
-export async function startTimer(
-  code: string,
-  artworkId: string,
-  seconds: number,
-): Promise<void> {
-  await update(ref(db, paths.auctionItem(code, artworkId)), {
-    timerState: 'running',
-    timerEndsAt: Date.now() + seconds * 1000,
-  });
+/** 호가 올리기 (+증가폭). */
+export async function raisePrice(code: string, artworkId: string, inc: number): Promise<void> {
+  const r = ref(db, paths.auctionItem(code, artworkId));
+  const cur = (await get(r)).val() as AuctionItem | null;
+  if (!cur) return;
+  await update(r, { askingPrice: (cur.askingPrice ?? 0) + inc });
 }
 
-export type BidResult = 'ok' | 'too-low' | 'closed' | 'budget';
-
-/**
- * 입찰 — RTDB 트랜잭션으로 최고가 갱신을 원자적으로 처리.
- * 새 호가는 (현재가 + 최소 호가 단위) 이상이어야 유효. 타이머 진행 중이면 자동 연장.
- */
-export async function placeBid(
+/** 모둠 참여(사겠다) / 기권 토글. */
+export async function setParticipation(
   code: string,
   artworkId: string,
   groupId: string,
-  amount: number,
-  minIncrement: number,
-  timerSeconds: number,
-): Promise<BidResult> {
-  const group = await getGroup(code, groupId);
-  if (!group) return 'closed';
-  if (amount > group.remainingBudget) return 'budget';
+  joining: boolean,
+): Promise<void> {
+  const r = ref(db, `${paths.auctionItem(code, artworkId)}/participants/${groupId}`);
+  await set(r, joining ? true : null);
+}
 
-  const itemRef = ref(db, paths.auctionItem(code, artworkId));
-  const unsub = await warmRef(itemRef);
-
-  let reason: BidResult = 'ok';
+/** 낙찰 — 모둠 예산 차감 + 낙찰작 기록 + 도장. */
+export async function award(
+  code: string,
+  artworkId: string,
+  groupId: string,
+  price: number,
+): Promise<void> {
+  const groupRef = ref(db, paths.group(code, groupId));
+  const unsub = await warmRef(groupRef);
   try {
-    const res = await runTransaction(itemRef, (item: AuctionItem | null) => {
-      if (!item || item.status !== 'live') {
-        reason = 'closed';
-        return; // abort
-      }
-      const floor = item.currentPrice > 0 ? item.currentPrice + minIncrement : minIncrement;
-      if (amount < floor) {
-        reason = 'too-low';
-        return; // abort
-      }
-      item.currentPrice = amount;
-      item.highBidGroupId = groupId;
-      if (item.timerState === 'running') {
-        item.timerEndsAt = Date.now() + timerSeconds * 1000;
-      }
-      return item;
+    await runTransaction(groupRef, (g) => {
+      if (!g) return g;
+      g.remainingBudget = (g.remainingBudget ?? 0) - price;
+      g.wonItems = g.wonItems || {};
+      g.wonItems[artworkId] = price;
+      return g;
     });
-
-    if (res.committed) {
-      const bidRef = push(ref(db, paths.bids(code)));
-      await set(bidRef, { id: bidRef.key, artworkId, groupId, amount, at: Date.now() });
-      return 'ok';
-    }
-    return reason;
   } finally {
     unsub();
   }
+  await update(ref(db, paths.auctionItem(code, artworkId)), {
+    status: 'sold',
+    winnerGroupId: groupId,
+    askingPrice: price,
+  });
 }
 
-/** 마감 — 최고가 있으면 낙찰(모둠 예산 차감), 없으면 유찰. */
-export async function finalizeItem(code: string, artworkId: string): Promise<'sold' | 'passed'> {
-  const itemRef = ref(db, paths.auctionItem(code, artworkId));
-  const item = (await get(itemRef)).val() as AuctionItem | null;
-  if (!item) return 'passed';
-
-  if (item.highBidGroupId) {
-    const price = item.currentPrice;
-    const gid = item.highBidGroupId;
-    const groupRef = ref(db, paths.group(code, gid));
-    const unsub = await warmRef(groupRef);
-    try {
-      await runTransaction(groupRef, (g) => {
-        if (!g) return g;
-        g.remainingBudget = (g.remainingBudget ?? 0) - price;
-        g.wonItems = g.wonItems || {};
-        g.wonItems[artworkId] = price;
-        return g;
-      });
-    } finally {
-      unsub();
-    }
-    await update(itemRef, { status: 'sold', timerState: 'idle', timerEndsAt: null });
-    return 'sold';
-  }
-
-  await update(itemRef, { status: 'passed', timerState: 'idle', timerEndsAt: null });
-  return 'passed';
+/** 유찰. */
+export async function passItem(code: string, artworkId: string): Promise<void> {
+  await update(ref(db, paths.auctionItem(code, artworkId)), { status: 'passed' });
 }
 
-/** 유찰작 재경매 — 다시 대기 상태로. */
+/** 유찰작 재경매 — 다시 대기. */
 export async function reauction(code: string, artworkId: string): Promise<void> {
   await update(ref(db, paths.auctionItem(code, artworkId)), {
     status: 'pending',
-    currentPrice: 0,
-    highBidGroupId: null,
-    timerState: 'idle',
-    timerEndsAt: null,
+    askingPrice: 0,
+    participants: null,
+    winnerGroupId: null,
   });
+}
+
+/** 참여 중 모둠 id 목록. */
+export function participantIds(item: AuctionItem | undefined): string[] {
+  if (!item?.participants) return [];
+  return Object.keys(item.participants).filter((g) => item.participants![g]);
 }

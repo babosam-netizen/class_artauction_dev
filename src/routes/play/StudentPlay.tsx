@@ -231,8 +231,6 @@ function StudentSession({ joined }: { joined: Joined }) {
         studentNumber={joined.number}
         groupId={joined.groupId}
         artworks={artworks}
-        minIncrement={meta.minIncrement}
-        timerSeconds={meta.timerSeconds}
       />
     );
   }
