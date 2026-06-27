@@ -11,6 +11,7 @@ export interface SessionMeta {
   branchDoorCount: number;
   groupAssignMode: GroupAssignMode;
   groupCount: number;
+  groupSize: number; // 모둠당 정원
   createdAt: Timestamp;
 }
 

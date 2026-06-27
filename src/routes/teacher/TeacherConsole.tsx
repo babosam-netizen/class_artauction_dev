@@ -20,6 +20,8 @@ const BORDER = 'rgba(196,167,90,0.4)';
 export function TeacherConsole() {
   const [code, setCode] = useState<string | null>(null);
   const [gradeBand, setGradeBand] = useState<GradeBand>('3-4');
+  const [groupCount, setGroupCount] = useState(4);
+  const [groupSize, setGroupSize] = useState(4);
   const [busy, setBusy] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [enterError, setEnterError] = useState('');
@@ -38,7 +40,8 @@ export function TeacherConsole() {
         timerSeconds: 10,
         commonGalleryCount: 2,
         branchDoorCount: 4,
-        groupCount: 4,
+        groupCount,
+        groupSize,
       });
       addRecent({ code: newCode, gradeBand, createdAt: Date.now() });
       setCode(newCode);
@@ -79,30 +82,42 @@ export function TeacherConsole() {
           {/* 새 세션 */}
           <div className="rounded-xl border p-5" style={{ borderColor: 'rgba(196,167,90,0.25)', background: 'rgba(28,18,10,0.5)' }}>
             <div className="mb-3 text-sm font-semibold" style={{ color: GOLD }}>새 세션 만들기</div>
-            <div className="flex items-center gap-2">
-              {(['3-4', '5-6'] as GradeBand[]).map((g) => (
-                <button
-                  key={g}
-                  onClick={() => setGradeBand(g)}
-                  className="rounded-full border px-4 py-2 text-sm"
-                  style={{
-                    borderColor: GOLD,
-                    color: gradeBand === g ? '#130e08' : '#ead9b8',
-                    background: gradeBand === g ? GOLD : 'transparent',
-                  }}
-                >
-                  {g === '3-4' ? '3~4학년' : '5~6학년'}
-                </button>
-              ))}
-              <button
-                onClick={handleCreate}
-                disabled={busy}
-                className="ml-auto rounded-full border px-6 py-2 text-sm disabled:opacity-50"
-                style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.15)', color: '#ead9b8' }}
-              >
-                {busy ? '생성 중…' : '＋ 생성'}
-              </button>
+
+            <div className="flex flex-col gap-3">
+              <Row label="학년군">
+                <div className="flex gap-2">
+                  {(['3-4', '5-6'] as GradeBand[]).map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGradeBand(g)}
+                      className="rounded-full border px-4 py-1.5 text-sm"
+                      style={{
+                        borderColor: GOLD,
+                        color: gradeBand === g ? '#130e08' : '#ead9b8',
+                        background: gradeBand === g ? GOLD : 'transparent',
+                      }}
+                    >
+                      {g === '3-4' ? '3~4학년' : '5~6학년'}
+                    </button>
+                  ))}
+                </div>
+              </Row>
+              <Row label="모둠 수">
+                <Stepper value={groupCount} min={1} max={12} onChange={setGroupCount} suffix="모둠" />
+              </Row>
+              <Row label="모둠당 인원">
+                <Stepper value={groupSize} min={1} max={15} onChange={setGroupSize} suffix="명" />
+              </Row>
             </div>
+
+            <button
+              onClick={handleCreate}
+              disabled={busy}
+              className="mt-4 w-full rounded-full border py-2.5 text-sm disabled:opacity-50"
+              style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.15)', color: '#ead9b8' }}
+            >
+              {busy ? '생성 중…' : `＋ 세션 생성 (최대 ${groupCount * groupSize}명)`}
+            </button>
           </div>
 
           {/* 코드로 입장 */}
@@ -217,6 +232,42 @@ export function TeacherConsole() {
           </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm" style={{ color: 'rgba(232,217,184,0.8)' }}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function Stepper({
+  value,
+  min,
+  max,
+  suffix,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  suffix?: string;
+  onChange: (v: number) => void;
+}) {
+  const btn = 'flex h-9 w-9 items-center justify-center rounded-full border text-lg disabled:opacity-30';
+  const style = { borderColor: GOLD, color: '#ead9b8' };
+  return (
+    <div className="flex items-center gap-3">
+      <button className={btn} style={style} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}>−</button>
+      <span className="w-16 text-center font-display text-xl" style={{ color: '#ead9b8' }}>
+        {value}
+        {suffix && <span className="ml-1 text-xs" style={{ color: 'rgba(232,217,184,0.6)' }}>{suffix}</span>}
+      </span>
+      <button className={btn} style={style} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))}>＋</button>
     </div>
   );
 }

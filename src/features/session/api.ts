@@ -54,6 +54,7 @@ export interface CreateSessionParams {
   commonGalleryCount: number;
   branchDoorCount: number;
   groupCount: number;
+  groupSize: number;
   groupAssignMode?: GroupAssignMode;
 }
 
@@ -73,6 +74,7 @@ export async function createSession(params: CreateSessionParams): Promise<string
     branchDoorCount: params.branchDoorCount,
     groupAssignMode: params.groupAssignMode ?? 'preset',
     groupCount: params.groupCount,
+    groupSize: params.groupSize,
     createdAt: Date.now(),
   };
   const state: SessionState = { phase: 'prologue' };

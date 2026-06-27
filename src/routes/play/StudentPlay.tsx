@@ -42,6 +42,9 @@ export function StudentPlay() {
   const [number, setNumber] = useState('');
   const [name, setName] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);
+  const [groupCounts, setGroupCounts] = useState<Record<string, number>>({});
+  const [groupSize, setGroupSize] = useState(99);
+  const [myGroupId, setMyGroupId] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -54,9 +57,19 @@ export function StudentPlay() {
         setError('코드를 찾을 수 없어요');
         return;
       }
-      const snap = await get(ref(db, paths.groups(c)));
-      const list: Group[] = snap.exists() ? Object.values(snap.val()) : [];
+      const [gSnap, sSnap, mSnap] = await Promise.all([
+        get(ref(db, paths.groups(c))),
+        get(ref(db, paths.students(c))),
+        get(ref(db, paths.meta(c))),
+      ]);
+      const list: Group[] = gSnap.exists() ? Object.values(gSnap.val()) : [];
+      const studentsVal = (sSnap.exists() ? sSnap.val() : {}) as Record<string, { groupId: string }>;
+      const counts: Record<string, number> = {};
+      for (const st of Object.values(studentsVal)) counts[st.groupId] = (counts[st.groupId] ?? 0) + 1;
       setGroups(list);
+      setGroupCounts(counts);
+      setGroupSize((mSnap.val() as SessionMeta | null)?.groupSize ?? 99);
+      setMyGroupId(studentsVal[number.trim()]?.groupId);
       setStage('group');
     } catch {
       setError('확인에 실패했어요. 다시 시도해 주세요.');
@@ -85,17 +98,24 @@ export function StudentPlay() {
       <MuseumShell title="모둠 선택" route="/play">
         <div className="mt-8 flex w-72 flex-col gap-3">
           <div className="text-center text-sm text-cream-dim">어느 모둠인가요?</div>
-          {groups.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => handleJoin(g.id)}
-              disabled={busy}
-              className="rounded-full border px-6 py-3 disabled:opacity-50"
-              style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.1)', color: '#ead9b8' }}
-            >
-              {g.name}
-            </button>
-          ))}
+          {groups.map((g) => {
+            const n = groupCounts[g.id] ?? 0;
+            const full = n >= groupSize && g.id !== myGroupId;
+            return (
+              <button
+                key={g.id}
+                onClick={() => handleJoin(g.id)}
+                disabled={busy || full}
+                className="flex items-center justify-between rounded-full border px-6 py-3 disabled:opacity-40"
+                style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.1)', color: '#ead9b8' }}
+              >
+                <span>{g.name}</span>
+                <span className="text-xs" style={{ color: 'rgba(232,217,184,0.6)' }}>
+                  {n}/{groupSize}명{full ? ' · 꽉 참' : ''}
+                </span>
+              </button>
+            );
+          })}
           {error && (
             <div className="text-center text-sm" style={{ color: '#e0a0a0' }}>
               {error}
