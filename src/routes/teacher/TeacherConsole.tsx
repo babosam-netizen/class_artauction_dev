@@ -1,18 +1,15 @@
 import { useState } from 'react';
-import { MuseumShell } from '@/components/MuseumShell';
+import { Link } from 'react-router-dom';
 import { ArtworkManager } from './ArtworkManager';
+import { ContentEditor } from './ContentEditor';
 import { TeacherAuctionPanel } from '@/features/auction/TeacherAuctionPanel';
 import { TeacherResultPanel } from '@/features/results/TeacherResultPanel';
-import { ContentEditor } from './ContentEditor';
+import { StageNavigator } from '@/features/session/StageNavigator';
+import { Dashboard } from '@/features/teacher/Dashboard';
 import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
-import {
-  createSession,
-  setPhase,
-  nextPhase,
-  prevPhase,
-  PHASE_LABELS,
-} from '@/features/session/api';
+import { createSession } from '@/features/session/api';
+import { tokens } from '@/theme';
 import type { GradeBand, SessionMeta, SessionState } from '@/models';
 
 const GOLD = '#c4975a';
@@ -42,16 +39,19 @@ export function TeacherConsole() {
     }
   }
 
+  // 세션 생성 전
   if (!code) {
     return (
-      <MuseumShell title="교사 콘솔" route="/teacher">
-        <div className="mt-8 flex flex-col items-center gap-4">
-          <div className="flex gap-2">
+      <div className="min-h-screen font-body text-cream" style={{ background: tokens.effect.wallGradient }}>
+        <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+          <div className="font-display text-4xl italic">교사 콘솔</div>
+          <p className="mt-2 text-sm text-cream-dim">학년군을 고르고 세션을 시작하세요</p>
+          <div className="mt-6 flex gap-2">
             {(['3-4', '5-6'] as GradeBand[]).map((g) => (
               <button
                 key={g}
                 onClick={() => setGradeBand(g)}
-                className="rounded-full border px-4 py-2 text-sm"
+                className="rounded-full border px-5 py-2 text-sm"
                 style={{
                   borderColor: GOLD,
                   color: gradeBand === g ? '#130e08' : '#ead9b8',
@@ -65,56 +65,75 @@ export function TeacherConsole() {
           <button
             onClick={handleCreate}
             disabled={busy}
-            className="rounded-full border px-8 py-3 text-base disabled:opacity-50"
+            className="mt-5 rounded-full border px-8 py-3 disabled:opacity-50"
             style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.13)', color: '#ead9b8' }}
           >
             {busy ? '생성 중…' : '세션 생성하기'}
           </button>
+          <Link to="/" className="mt-6 text-xs" style={{ color: 'rgba(232,217,184,0.5)' }}>
+            ← 홈으로
+          </Link>
         </div>
-      </MuseumShell>
+      </div>
     );
   }
 
   const phase = state?.phase ?? 'lobby';
+  const isAuction = phase === 'auction';
+  const isResult = phase === 'result';
+
   return (
-    <MuseumShell title="교사 콘솔" route="/teacher">
-      <div className="mt-6 flex flex-col items-center gap-5">
-        <div className="text-center">
-          <div className="text-xs tracking-widest text-cream-dim">입장 코드</div>
-          <div className="font-display text-6xl tracking-[0.2em]" style={{ color: GOLD }}>
-            {code}
+    <div
+      className="min-h-screen font-body text-cream"
+      style={{ background: tokens.effect.wallGradient }}
+    >
+      <div className="mx-auto max-w-6xl px-4 py-5">
+        {/* 헤더 */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-baseline gap-3">
+            <span className="font-display text-2xl italic">교사 콘솔</span>
+            <span className="text-xs text-cream-dim">입장 코드</span>
+            <span className="font-display text-3xl tracking-[0.15em]" style={{ color: GOLD }}>
+              {code}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs" style={{ color: 'rgba(232,217,184,0.6)' }}>
+            <span>TV: /tv?code={code}</span>
+            <Link to="/" style={{ color: 'rgba(232,217,184,0.6)' }}>홈</Link>
           </div>
         </div>
-        <div className="text-sm text-cream-dim">
-          현재 단계: <b style={{ color: '#ead9b8' }}>{PHASE_LABELS[phase]}</b>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setPhase(code, prevPhase(phase))}
-            className="rounded-full border px-5 py-2 text-sm"
-            style={{ borderColor: 'rgba(196,167,90,0.4)', color: '#ead9b8' }}
-          >
-            ← 이전 단계
-          </button>
-          <button
-            onClick={() => setPhase(code, nextPhase(phase))}
-            className="rounded-full border px-5 py-2 text-sm"
-            style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.13)', color: '#ead9b8' }}
-          >
-            다음 단계 →
-          </button>
-        </div>
 
-        {(phase === 'lobby' || phase === 'prologue') && <ContentEditor code={code} />}
+        {/* 단계 네비게이터 */}
+        <StageNavigator code={code} phase={phase} />
 
-        {phase === 'auction' && meta ? (
-          <TeacherAuctionPanel code={code} meta={meta} />
-        ) : phase === 'result' && meta ? (
-          <TeacherResultPanel code={code} gradeBand={meta.gradeBand} />
-        ) : (
-          <ArtworkManager code={code} branchDoorCount={meta?.branchDoorCount ?? 4} />
-        )}
+        {/* 조정실 + 현황판 */}
+        <div className="mt-5 flex flex-col gap-5 lg:flex-row">
+          {/* 조정실 */}
+          <section className="w-full lg:w-[460px] lg:shrink-0">
+            <div className="mb-2 text-sm font-semibold tracking-wide" style={{ color: GOLD }}>
+              🎛 조정실
+            </div>
+            {isAuction && meta ? (
+              <TeacherAuctionPanel code={code} meta={meta} />
+            ) : isResult && meta ? (
+              <TeacherResultPanel code={code} gradeBand={meta.gradeBand} />
+            ) : (
+              <>
+                <ArtworkManager code={code} branchDoorCount={meta?.branchDoorCount ?? 4} />
+                {(phase === 'lobby' || phase === 'prologue') && <ContentEditor code={code} />}
+              </>
+            )}
+          </section>
+
+          {/* 현황판 */}
+          <section className="min-w-0 flex-1">
+            <div className="mb-2 text-sm font-semibold tracking-wide" style={{ color: GOLD }}>
+              📊 현황판
+            </div>
+            <Dashboard code={code} gradeBand={meta?.gradeBand ?? gradeBand} />
+          </section>
+        </div>
       </div>
-    </MuseumShell>
+    </div>
   );
 }

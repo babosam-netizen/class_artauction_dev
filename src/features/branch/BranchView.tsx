@@ -76,6 +76,7 @@ export function BranchView({
         gradeBand={gradeBand}
         prompts={prompts}
         artworks={doorArtworks}
+        phase="branch"
       />
     </div>
   );

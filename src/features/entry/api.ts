@@ -2,7 +2,19 @@ import { ref, get, set, update } from 'firebase/database';
 import { signInAnonymously } from 'firebase/auth';
 import { auth, db } from '@/firebase/app';
 import { paths } from '@/firebase/paths';
-import type { Student } from '@/models';
+import type { Phase, Student } from '@/models';
+
+/** 학생 현재 위치 갱신 (현황판용). */
+export async function updatePresence(
+  code: string,
+  number: string,
+  phase: Phase,
+  detail?: string,
+): Promise<void> {
+  const now = Date.now();
+  const current = detail ? { phase, detail, at: now } : { phase, at: now };
+  await update(ref(db, paths.student(code, number)), { current, lastSeenAt: now });
+}
 
 /**
  * 코드 + 번호 + 이름으로 입장. 학생 익명 인증.

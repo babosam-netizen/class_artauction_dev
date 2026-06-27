@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Home } from './routes/home/Home';
 import { TeacherConsole } from './routes/teacher/TeacherConsole';
 import { StudentPlay } from './routes/play/StudentPlay';
 import { TvScreen } from './routes/tv/TvScreen';
+import { DemoView } from './routes/demo/DemoView';
+import { TeacherGate } from './features/teacher-auth/TeacherGate';
 import { MuseumShell } from './components/MuseumShell';
 import { useAuthReady } from './firebase/hooks';
 
@@ -15,10 +18,19 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/teacher" element={<TeacherConsole />} />
+        <Route path="/" element={<Home />} />
+        <Route
+          path="/teacher"
+          element={
+            <TeacherGate>
+              <TeacherConsole />
+            </TeacherGate>
+          }
+        />
         <Route path="/play" element={<StudentPlay />} />
         <Route path="/tv" element={<TvScreen />} />
-        <Route path="*" element={<Navigate to="/teacher" replace />} />
+        <Route path="/demo" element={<DemoView />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

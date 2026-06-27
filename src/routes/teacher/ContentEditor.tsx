@@ -44,7 +44,7 @@ export function ContentEditor({ code }: { code: string }) {
 
   return (
     <div
-      className="mt-6 w-[440px] rounded-lg border p-5 text-left"
+      className="mt-4 w-full rounded-lg border p-5 text-left"
       style={{ borderColor: 'rgba(196,167,90,0.2)', background: 'rgba(28,18,10,0.6)' }}
     >
       <div className="mb-2 text-sm font-medium" style={{ color: GOLD }}>
