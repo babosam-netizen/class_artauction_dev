@@ -113,3 +113,8 @@ export async function setPhase(code: string, phase: Phase): Promise<void> {
 export async function saveContent(code: string, content: SessionContent): Promise<void> {
   await set(ref(db, paths.content(code)), content);
 }
+
+/** 결과 발표: 감정가·순위 공개 토글. */
+export async function setReveal(code: string, reveal: boolean): Promise<void> {
+  await update(ref(db, paths.state(code)), { revealValues: reveal });
+}

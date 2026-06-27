@@ -18,6 +18,7 @@ export interface SessionMeta {
 export interface SessionState {
   phase: Phase;
   currentAuctionArtworkId?: string;
+  revealValues?: boolean; // 결과 발표: 교사가 감정가·순위 공개 토글
 }
 
 /** 교사 편집 가능 콘텐츠 (학년군 기본값으로 시드, 가변) */

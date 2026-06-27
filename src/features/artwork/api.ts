@@ -1,7 +1,16 @@
-import { ref, push, set, remove } from 'firebase/database';
+import { ref, push, set, remove, update } from 'firebase/database';
 import { db } from '@/firebase/app';
 import { paths } from '@/firebase/paths';
 import type { Artwork, Placement } from '@/models';
+
+/** 작품 일부 필드 수정 (감정가·해설·제목·배치·경매대상 등). */
+export async function updateArtwork(
+  code: string,
+  id: string,
+  patch: Partial<Artwork>,
+): Promise<void> {
+  await update(ref(db, paths.artwork(code, id)), patch);
+}
 
 export interface ArtworkInput {
   imageUrl: string;

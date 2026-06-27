@@ -1,7 +1,7 @@
 import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { sortByOrder } from '@/features/artwork/api';
-import type { Artwork, Group, GroupResult } from '@/models';
+import type { Artwork, Group, GroupResult, SessionState } from '@/models';
 
 const C = {
   gold: '#c4975a',
@@ -16,6 +16,8 @@ export function ResultsView({ code }: { code: string }) {
   const results = useRtdbList<GroupResult>(paths.results(code));
   const groupsMap = useRtdbValue<Record<string, Group>>(paths.groups(code));
   const artworks = sortByOrder(useRtdbList<Artwork>(paths.artworks(code)));
+  const state = useRtdbValue<SessionState>(paths.state(code));
+  const reveal = state?.revealValues ?? false;
 
   const ranked = [...results].sort((a, b) => a.rank - b.rank);
   const groupName = (id: string) => groupsMap?.[id]?.name ?? id;
@@ -25,6 +27,24 @@ export function ResultsView({ code }: { code: string }) {
       <div className="flex h-screen items-center justify-center font-body" style={{ background: C.wall }}>
         <div className="font-display text-4xl italic" style={{ color: C.cream }}>
           결과를 집계하고 있어요…
+        </div>
+      </div>
+    );
+  }
+
+  // 교사가 아직 공개하지 않음 → 발표 대기 화면
+  if (!reveal) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center px-6 text-center font-body" style={{ background: C.wall }}>
+        <div className="text-6xl">🎁</div>
+        <div className="mt-6 font-display text-5xl italic" style={{ color: C.cream }}>곧 결과를 공개합니다</div>
+        <div className="mt-3 text-lg" style={{ color: C.creamDim }}>작품들의 실제 감정가와 모둠 순위를 발표할게요</div>
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
+          {Object.values(groupsMap ?? {}).sort((a, b) => a.name.localeCompare(b.name)).map((g) => (
+            <span key={g.id} className="rounded-full px-4 py-2 text-sm" style={{ background: 'rgba(196,167,90,0.12)', color: C.cream }}>
+              {g.name}
+            </span>
+          ))}
         </div>
       </div>
     );
