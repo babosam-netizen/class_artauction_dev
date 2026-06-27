@@ -212,6 +212,12 @@ export function TeacherConsole() {
 
         <StageNavigator code={code} phase={phase} />
 
+        {isSetup && (
+          <div className="mt-4">
+            <GroupSettings code={code} />
+          </div>
+        )}
+
         <div className="mt-5 flex flex-col gap-5 lg:flex-row">
           <section className="w-full lg:w-[460px] lg:shrink-0">
             <div className="mb-2 text-sm font-semibold tracking-wide" style={{ color: GOLD }}>🎛 조정실</div>
@@ -221,7 +227,6 @@ export function TeacherConsole() {
               <TeacherResultPanel code={code} gradeBand={meta.gradeBand} />
             ) : (
               <div className="flex flex-col gap-4">
-                {isSetup && <GroupSettings code={code} />}
                 {isSetup && <ContentEditor code={code} />}
                 <ArtworkManager code={code} branchDoorCount={meta?.branchDoorCount ?? 4} />
               </div>
