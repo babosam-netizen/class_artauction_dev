@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { get, ref } from 'firebase/database';
 import { db } from '@/firebase/app';
 import { MuseumShell } from '@/components/MuseumShell';
@@ -8,6 +8,7 @@ import { joinSession } from '@/features/entry/api';
 import { sessionExists, PHASE_LABELS } from '@/features/session/api';
 import { sortByOrder } from '@/features/artwork/api';
 import { GalleryView } from '@/features/appreciation/GalleryView';
+import { GalleryScene } from '@/features/appreciation/GalleryScene';
 import { BranchView } from '@/features/branch/BranchView';
 import { StudentAuctionView } from '@/features/auction/StudentAuctionView';
 import { ResultsView } from '@/features/results/ResultsView';
@@ -157,6 +158,12 @@ function StudentSession({ joined }: { joined: Joined }) {
   const artworks = useRtdbList<Artwork>(paths.artworks(joined.code));
 
   const phase = state?.phase ?? 'lobby';
+
+  // RPG식 입장 장면: 공통회랑에 들어가기 전 연출 (단계가 바뀌면 초기화)
+  const [enteredGallery, setEnteredGallery] = useState(false);
+  useEffect(() => {
+    if (phase !== 'gallery') setEnteredGallery(false);
+  }, [phase]);
   const gradeBand = meta?.gradeBand ?? '3-4';
   const prompts =
     content?.prompts && content.prompts.length > 0 ? content.prompts : DEFAULT_PROMPTS[gradeBand];
@@ -168,6 +175,9 @@ function StudentSession({ joined }: { joined: Joined }) {
   }
 
   if (phase === 'gallery' && meta) {
+    if (!enteredGallery) {
+      return <GalleryScene onEnter={() => setEnteredGallery(true)} />;
+    }
     const common = sortByOrder(artworks.filter((a) => a.placement?.kind === 'common'));
     return (
       <GalleryView

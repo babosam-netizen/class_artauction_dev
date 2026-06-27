@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryView } from '@/features/appreciation/GalleryView';
+import { GalleryScene } from '@/features/appreciation/GalleryScene';
 import { PrologueView } from '@/features/prologue/PrologueView';
 import { DemoAuction } from '@/features/auction/DemoAuction';
 import { SAMPLE_ARTWORKS } from '@/content/sampleArtworks';
@@ -14,8 +15,12 @@ import type { GradeBand, Phase } from '@/models';
 const GOLD = '#c4975a';
 
 export function DemoView() {
-  const [phase, setPhase] = useState<Phase>('gallery');
+  const [phase, setPhase] = useState<Phase>('prologue');
   const [grade, setGrade] = useState<GradeBand>('3-4');
+  const [enteredGallery, setEnteredGallery] = useState(false);
+  useEffect(() => {
+    if (phase !== 'gallery') setEnteredGallery(false);
+  }, [phase]);
 
   const prompts = DEFAULT_PROMPTS[grade];
   const common = SAMPLE_ARTWORKS.filter((a) => a.placement.kind === 'common');
@@ -25,8 +30,10 @@ export function DemoView() {
   if (phase === 'prologue') {
     screen = <PrologueView steps={DEFAULT_PROLOGUE[grade]} />;
   } else if (phase === 'gallery') {
-    screen = (
+    screen = enteredGallery ? (
       <GalleryView code="demo" studentNumber="0" studentName="미리보기" gradeBand={grade} prompts={prompts} artworks={common} demo phase="gallery" />
+    ) : (
+      <GalleryScene onEnter={() => setEnteredGallery(true)} />
     );
   } else if (phase === 'branch') {
     screen = (
