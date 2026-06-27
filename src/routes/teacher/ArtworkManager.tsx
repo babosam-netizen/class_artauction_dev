@@ -10,10 +10,9 @@ const BORDER = 'rgba(196,167,90,0.4)';
 
 interface Props {
   code: string;
-  branchDoorCount: number;
 }
 
-export function ArtworkManager({ code, branchDoorCount }: Props) {
+export function ArtworkManager({ code }: Props) {
   const artworks = sortByOrder(useRtdbList<Artwork>(paths.artworks(code)));
 
   const [imageUrl, setImageUrl] = useState('');
@@ -22,8 +21,13 @@ export function ArtworkManager({ code, branchDoorCount }: Props) {
   const [appraisedValue, setAppraisedValue] = useState('');
   const [commentary, setCommentary] = useState('');
   const [placeType, setPlaceType] = useState<'common' | 'branch'>('common');
-  const [door, setDoor] = useState(0);
-  const [forAuction, setForAuction] = useState(true);
+  const [forAuction, setForAuction] = useState(false); // 공통 기본 제외
+
+  // 배치 바꾸면 경매 대상 기본값도 맞춰줌 (공통=제외, 분기=포함)
+  function changePlacement(t: 'common' | 'branch') {
+    setPlaceType(t);
+    setForAuction(t === 'branch');
+  }
   const [busy, setBusy] = useState(false);
   const [serverUrl, setServerUrl] = useState(loadImageServerUrl());
   const [uploading, setUploading] = useState(false);
@@ -53,7 +57,7 @@ export function ArtworkManager({ code, branchDoorCount }: Props) {
     setBusy(true);
     try {
       const placement: Placement =
-        placeType === 'common' ? { kind: 'common' } : { kind: 'branch', door };
+        placeType === 'common' ? { kind: 'common' } : { kind: 'branch', door: 0 };
       await addArtwork(
         code,
         {
@@ -160,7 +164,7 @@ export function ArtworkManager({ code, branchDoorCount }: Props) {
         <textarea
           value={commentary}
           onChange={(e) => setCommentary(e.target.value)}
-          placeholder="작품 해설 (감상 직후 학생에게 표시)"
+          placeholder="작품 해설 (공통회랑=감상 직후 / 분기=경매 후 결과에서 공개)"
           rows={2}
           className={`${inputCls} resize-none`}
           style={inputStyle}
@@ -168,27 +172,13 @@ export function ArtworkManager({ code, branchDoorCount }: Props) {
         <div className="flex items-center gap-2">
           <select
             value={placeType}
-            onChange={(e) => setPlaceType(e.target.value as 'common' | 'branch')}
+            onChange={(e) => changePlacement(e.target.value as 'common' | 'branch')}
             className={inputCls}
             style={{ ...inputStyle, background: '#1c120a' }}
           >
-            <option value="common">공통회랑</option>
-            <option value="branch">분기</option>
+            <option value="common">공통회랑 (수행평가)</option>
+            <option value="branch">분기 (경매)</option>
           </select>
-          {placeType === 'branch' && (
-            <select
-              value={door}
-              onChange={(e) => setDoor(Number(e.target.value))}
-              className={inputCls}
-              style={{ ...inputStyle, background: '#1c120a' }}
-            >
-              {Array.from({ length: branchDoorCount }, (_, i) => (
-                <option key={i} value={i}>
-                  {i + 1}번 문
-                </option>
-              ))}
-            </select>
-          )}
           <label className="flex items-center gap-1 text-xs" style={{ color: '#ead9b8' }}>
             <input
               type="checkbox"

@@ -228,7 +228,7 @@ export function TeacherConsole() {
             ) : (
               <div className="flex flex-col gap-4">
                 {isSetup && <ContentEditor code={code} />}
-                <ArtworkManager code={code} branchDoorCount={meta?.branchDoorCount ?? 4} />
+                <ArtworkManager code={code} />
               </div>
             )}
           </section>

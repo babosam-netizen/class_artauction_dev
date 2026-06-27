@@ -220,7 +220,6 @@ function StudentSession({ joined }: { joined: Joined }) {
         gradeBand={gradeBand}
         prompts={prompts}
         artworks={artworks}
-        doorCount={meta.branchDoorCount}
       />
     );
   }

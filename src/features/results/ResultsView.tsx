@@ -114,6 +114,11 @@ export function ResultsView({ code }: { code: string }) {
                   출처: {a.source}
                 </div>
               )}
+              {a.commentary && (
+                <div className="mt-1.5 text-xs leading-relaxed" style={{ color: 'rgba(232,217,184,0.7)' }}>
+                  {a.commentary}
+                </div>
+              )}
             </div>
           ))}
         </div>

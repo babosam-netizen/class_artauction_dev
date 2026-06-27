@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GalleryView } from '@/features/appreciation/GalleryView';
 import { GalleryScene } from '@/features/appreciation/GalleryScene';
+import { BranchView } from '@/features/branch/BranchView';
 import { PrologueView } from '@/features/prologue/PrologueView';
 import { DemoAuction } from '@/features/auction/DemoAuction';
 import { SAMPLE_ARTWORKS } from '@/content/sampleArtworks';
@@ -37,7 +38,7 @@ export function DemoView() {
     );
   } else if (phase === 'branch') {
     screen = (
-      <GalleryView code="demo" studentNumber="0" studentName="미리보기" gradeBand={grade} prompts={prompts} artworks={branch} demo phase="branch" />
+      <BranchView code="demo" studentNumber="0" studentName="미리보기" gradeBand={grade} prompts={prompts} artworks={branch} demo />
     );
   } else if (phase === 'auction') {
     screen = <DemoAuction />;

@@ -1,11 +1,9 @@
-# 맥 스튜디오(OrbStack)에서 이미지 서버 + Cloudflare 터널 상시 운영.
-# - restart: unless-stopped → 부팅/도커 시작 시 자동 기동 (수동 실행 불필요)
-# - 이미지 파일은 호스트 폴더(IMAGE_DATA_PATH)에 bind mount → 나중에 DAS로 폴더만 옮기면 됨
+# 맥 스튜디오(OrbStack)에서 이미지 서버 실행. 외부 공개는 Tailscale Funnel이 담당.
+# - restart: unless-stopped → 부팅/도커 시작 시 자동 기동
+# - 데이터는 호스트 폴더(IMAGE_DATA_PATH)에 bind mount (SSD 지금 → 나중에 DAS로 폴더만 이동)
+# - localhost:8787 로 호스트에 공개 → 호스트의 Tailscale Funnel이 이 포트를 외부 HTTPS로 노출
 #
-# 지금(도메인 없음): 아래처럼 cloudflared가 '빠른 터널'로 임시 주소를 발급.
-#   → 로그(docker compose logs cloudflared)에서 https://...trycloudflare.com 확인.
-# 나중(도메인 연결): cloudflared command 를 'tunnel --no-autoupdate run' 으로 바꾸고
-#   environment 에 TUNNEL_TOKEN 추가 → 고정 주소(주소 안 바뀜). 자세히는 DOCKER.md.
+# 외부 노출:  tailscale funnel --bg 8787   (고정 주소 https://<맥>.<tailnet>.ts.net)
 
 services:
   image-server:
@@ -15,14 +13,6 @@ services:
       - PORT=8787
       - UPLOAD_DIR=/data
     volumes:
-      # 지금은 SSD(~/appdata/art-images). 나중에 DAS 경로로 바꾸면 됨.
       - ${IMAGE_DATA_PATH:-/Users/babostudio/appdata/art-images}:/data
-    expose:
-      - '8787'
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://image-server:8787
-    depends_on:
-      - image-server
+    ports:
+      - '127.0.0.1:8787:8787'

@@ -123,26 +123,21 @@ export function TvGallery({ code }: { code: string }) {
 }
 
 export function TvBranch({ code }: { code: string }) {
-  const meta = useRtdbValue<SessionMeta>(paths.meta(code));
   const arts = sortByOrder(useRtdbList<Artwork>(paths.artworks(code)).filter((a) => a.placement?.kind === 'branch'));
-  const doors = meta?.branchDoorCount ?? 4;
-  const countFor = (d: number) => arts.filter((a) => a.placement.kind === 'branch' && a.placement.door === d).length;
 
   return (
     <Wall>
-      <div className="flex flex-col items-center px-10">
-        <div className="text-xs tracking-[5px]" style={{ color: 'rgba(196,167,90,0.7)' }}>회랑 분기</div>
-        <div className="mt-3 font-display text-5xl italic" style={{ color: C.cream }}>전시실을 골라 들어가요</div>
-        <div className="mt-10 flex flex-wrap justify-center gap-6">
-          {Array.from({ length: doors }, (_, d) => (
-            <div key={d} className="flex flex-col items-center justify-end" style={{
-              width: 150, height: 190, borderTopLeftRadius: 75, borderTopRightRadius: 75,
-              border: '2px solid rgba(196,167,90,0.45)', borderBottom: 'none',
-              background: 'linear-gradient(to top, rgba(196,167,90,0.16), transparent)',
-            }}>
-              <div className="text-4xl">🚪</div>
-              <div className="mt-1 font-display text-2xl italic" style={{ color: C.cream }}>{d + 1}번 문</div>
-              <div className="mb-6 text-sm" style={{ color: 'rgba(196,167,90,0.7)' }}>작품 {countFor(d)}점</div>
+      <div className="flex max-h-screen flex-col items-center overflow-auto px-10 py-8">
+        <div className="text-xs tracking-[5px]" style={{ color: 'rgba(196,167,90,0.7)' }}>분기 전시실</div>
+        <div className="mt-2 font-display text-4xl italic" style={{ color: C.cream }}>
+          마음에 드는 작품 1점을 골라요
+        </div>
+        <div className="mt-2 text-sm" style={{ color: C.creamDim }}>{arts.length}점 중 하나를 골라 감상을 써요</div>
+        <div className="mt-7 grid grid-cols-4 gap-4">
+          {arts.map((a) => (
+            <div key={a.id} className="w-40 overflow-hidden rounded-lg border" style={{ borderColor: 'rgba(196,167,90,0.4)', background: 'rgba(28,18,10,0.6)' }}>
+              {a.imageUrl && <img src={a.imageUrl} alt={a.title} className="h-24 w-full object-cover" />}
+              <div className="p-1.5 text-center font-display text-base italic" style={{ color: C.cream }}>{a.title}</div>
             </div>
           ))}
         </div>
