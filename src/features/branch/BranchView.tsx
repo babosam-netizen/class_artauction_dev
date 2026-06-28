@@ -165,9 +165,9 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
     <Wall>
       <div className="relative z-[2] flex flex-1 flex-col items-center justify-center">
         <div className="flex flex-col items-center" style={{ animation: 'fadeUp 0.5s ease' }}>
-          <div style={{ background: C.frame, padding: 16, boxShadow: '0 0 0 1.5px rgba(80,50,5,0.9), 0 28px 80px rgba(0,0,0,0.9)' }}>
+          <div style={{ background: C.frame, padding: 10, boxShadow: '0 0 0 1.5px rgba(80,50,5,0.9), 0 28px 80px rgba(0,0,0,0.9)' }}>
             <div style={{ border: '3px solid rgba(50,32,4,0.7)', padding: 4, background: '#0e0903' }}>
-              <img src={current.imageUrl} alt="작품" style={{ width: 'min(52vh,82vw)', height: 'min(38vh,60vw)', objectFit: 'cover', display: 'block' }} />
+              <img src={current.imageUrl} alt="작품" style={{ width: 'min(92vh, calc(100vw - 400px))', height: '72vh', objectFit: 'contain', display: 'block', background: '#0e0903' }} />
             </div>
           </div>
           <button onClick={() => setPicked(null)} className="mt-3 text-xs" style={{ color: C.creamDim }}>← 다른 작품 고르기</button>

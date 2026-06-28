@@ -89,9 +89,9 @@ export function GalleryView({
     );
   }
 
-  // 작품을 화면 최대로 (패널 열리면 살짝 축소)
-  const boxH = open ? '44vh' : '62vh';
-  const boxW = open ? 'min(62vh, calc(100vw - 430px))' : 'min(86vh, 90vw)';
+  // 작품을 화면 대부분 채우게 (패널 열리면 살짝 축소)
+  const boxH = open ? '64vh' : '72vh';
+  const boxW = open ? 'min(90vh, calc(100vw - 400px))' : 'min(128vh, 95vw)';
   const answeredCount = answers.filter((a) => a.trim()).length;
   const allAnswered = qCount > 0 && answers.every((a) => a.trim().length > 0);
 
@@ -137,7 +137,7 @@ export function GalleryView({
           <div
             style={{
               background: C.frame,
-              padding: 18,
+              padding: 10,
               boxShadow:
                 '0 0 0 1.5px rgba(80,50,5,0.9), 0 32px 90px rgba(0,0,0,0.92), 0 8px 30px rgba(0,0,0,0.6)',
               transition: 'all 0.4s ease',
@@ -146,7 +146,7 @@ export function GalleryView({
             <div style={{ border: '3px solid rgba(50,32,4,0.7)', padding: 4, background: '#0e0903' }}>
               <div style={{ width: boxW, height: boxH, overflow: 'hidden', background: '#0e0903', transition: 'all 0.4s ease' }}>
                 {current.imageUrl ? (
-                  <img src={current.imageUrl} alt={current.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  <img src={current.imageUrl} alt={current.title} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                 ) : (
                   <div className="flex h-full items-center justify-center text-4xl opacity-30">🖼</div>
                 )}
@@ -154,28 +154,28 @@ export function GalleryView({
             </div>
           </div>
 
-          <div className="mt-4 text-center" style={{ animation: 'fadeUp 0.5s ease 0.1s both' }}>
+          <div className="mt-2 text-center" style={{ animation: 'fadeUp 0.5s ease 0.1s both' }}>
             {showTitle && (
-              <div className="font-display text-2xl italic" style={{ color: C.cream, letterSpacing: '0.5px' }}>
+              <div className="font-display text-xl italic" style={{ color: C.cream, letterSpacing: '0.5px' }}>
                 {current.title}
               </div>
             )}
 
             {/* 작품 진행 도트 */}
-            <div className="mt-3 flex justify-center gap-[7px]">
+            <div className="mt-2 flex justify-center gap-[7px]">
               {artworks.map((a, i) => (
                 <div key={a.id} style={{ width: i === index ? 20 : 6, height: 6, borderRadius: 3, background: i === index ? C.gold : 'rgba(196,150,90,0.28)', transition: 'all 0.35s ease' }} />
               ))}
             </div>
 
             {/* 질문 진행 요약 (항상 보임) */}
-            <div className="mt-3 text-xs" style={{ color: C.creamDim }}>
+            <div className="mt-1 text-xs" style={{ color: C.creamDim }}>
               질문 <b style={{ color: C.gold }}>{answeredCount}</b> / {qCount} 완료
             </div>
 
             <button
               onClick={() => setOpen((o) => !o)}
-              className="mt-3 inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm"
+              className="mt-2 inline-flex items-center gap-2 rounded-full border px-6 py-2.5 text-sm"
               style={{ borderColor: C.goldSoft, background: 'rgba(196,167,90,0.07)', color: C.creamDim }}
             >
               <span>✏️</span>
@@ -183,7 +183,7 @@ export function GalleryView({
             </button>
 
             {/* 해설/다음: 모두 답해야 열림 */}
-            <div className="mt-3">
+            <div className="mt-2">
               {allAnswered ? (
                 <button
                   onClick={() => setShowCommentary(true)}
