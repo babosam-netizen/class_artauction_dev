@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
-import { addArtwork, removeArtwork, updateArtwork, sortByOrder } from '@/features/artwork/api';
+import { addArtwork, removeArtwork, updateArtwork, sortByOrder, copyArtworksFrom } from '@/features/artwork/api';
 import { setShowCommonTitles } from '@/features/session/api';
 import { uploadImage, loadImageServerUrl, saveImageServerUrl } from '@/features/artwork/upload';
 import type { Artwork, Placement, SessionMeta } from '@/models';
@@ -20,6 +20,25 @@ export function ArtworkManager({ code }: { code: string }) {
   const [uploading, setUploading] = useState('');
   const [error, setError] = useState('');
   const [urlInput, setUrlInput] = useState('');
+  const [srcCode, setSrcCode] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState('');
+
+  async function importFrom() {
+    const from = srcCode.trim().toUpperCase();
+    if (!from || from === code) return;
+    setImporting(true);
+    setImportMsg('');
+    try {
+      const n = await copyArtworksFrom(from, code, artworks.length);
+      setImportMsg(n > 0 ? `${from}에서 ${n}점 복사했어요` : `${from}에 작품이 없어요`);
+      if (n > 0) setSrcCode('');
+    } catch {
+      setImportMsg('가져오기 실패 — 코드를 확인하세요');
+    } finally {
+      setImporting(false);
+    }
+  }
 
   // 여러 장 일괄 업로드 → 각 파일을 업로드하고 카드(작품) 생성
   async function handleFiles(files: FileList | null) {
@@ -132,6 +151,26 @@ export function ArtworkManager({ code }: { code: string }) {
         <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
           업로드한 작품마다 아래에서 감정가·해설·배치를 입력하세요.
         </div>
+
+        {/* 다른 반에서 작품 가져오기 */}
+        <div className="mt-1 flex gap-2 border-t pt-2" style={{ borderColor: 'rgba(196,167,90,0.12)' }}>
+          <input
+            value={srcCode}
+            onChange={(e) => setSrcCode(e.target.value)}
+            placeholder="다른 반 코드"
+            className={`${inputCls} flex-1`}
+            style={inputStyle}
+          />
+          <button
+            onClick={importFrom}
+            disabled={importing || !srcCode.trim()}
+            className="rounded border px-3 text-sm disabled:opacity-40"
+            style={{ borderColor: GOLD, color: '#ead9b8' }}
+          >
+            {importing ? '가져오는 중…' : '작품 가져오기'}
+          </button>
+        </div>
+        {importMsg && <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.7)' }}>{importMsg}</div>}
       </div>
 
       {/* 작품 카드(편집) */}
