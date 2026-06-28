@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArtworkManager } from './ArtworkManager';
 import { ContentEditor } from './ContentEditor';
 import { GroupSettings } from './GroupSettings';
@@ -19,6 +19,7 @@ const GOLD = '#c4975a';
 const BORDER = 'rgba(196,167,90,0.4)';
 
 export function TeacherConsole() {
+  const navigate = useNavigate();
   const [code, setCode] = useState<string | null>(null);
   const [gradeBand, setGradeBand] = useState<GradeBand>('3-4');
   const [groupCount, setGroupCount] = useState(4);
@@ -213,6 +214,13 @@ export function TeacherConsole() {
             </button>
             <button onClick={() => setCode(null)} className="rounded-full border px-3 py-2 text-sm" style={{ borderColor: 'rgba(196,167,90,0.3)', color: 'rgba(232,217,184,0.7)' }}>
               세션 전환
+            </button>
+            <button
+              onClick={() => { if (window.confirm('교사 화면에서 나가시겠어요? (세션은 유지됩니다)')) navigate('/'); }}
+              className="rounded-full border px-3 py-2 text-sm"
+              style={{ borderColor: 'rgba(224,160,160,0.4)', color: 'rgba(232,217,184,0.7)' }}
+            >
+              나가기
             </button>
           </div>
         </div>

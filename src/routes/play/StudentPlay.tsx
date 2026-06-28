@@ -91,7 +91,16 @@ export function StudentPlay() {
     }
   }
 
-  if (joined) return <StudentSession joined={joined} />;
+  if (joined)
+    return (
+      <StudentSession
+        joined={joined}
+        onExit={() => {
+          setJoined(null);
+          setStage('info');
+        }}
+      />
+    );
 
   if (stage === 'group') {
     return (
@@ -171,7 +180,7 @@ export function StudentPlay() {
   );
 }
 
-function StudentSession({ joined }: { joined: Joined }) {
+function StudentSession({ joined, onExit }: { joined: Joined; onExit: () => void }) {
   const state = useRtdbValue<SessionState>(paths.state(joined.code));
   const meta = useRtdbValue<SessionMeta>(paths.meta(joined.code));
   const content = useRtdbValue<SessionContent>(paths.content(joined.code));
@@ -179,7 +188,7 @@ function StudentSession({ joined }: { joined: Joined }) {
 
   const phase = state?.phase ?? 'lobby';
 
-  // RPG식 입장 장면: 공통회랑에 들어가기 전 연출 (단계가 바뀌면 초기화)
+  // RPG식 입장 장면: 공통작품감상실에 들어가기 전 연출 (단계가 바뀌면 초기화)
   const [enteredGallery, setEnteredGallery] = useState(false);
   useEffect(() => {
     if (phase !== 'gallery') setEnteredGallery(false);
@@ -188,18 +197,16 @@ function StudentSession({ joined }: { joined: Joined }) {
   const prompts =
     content?.prompts && content.prompts.length > 0 ? content.prompts : DEFAULT_PROMPTS[gradeBand];
 
+  let view: React.ReactNode;
   if (phase === 'prologue') {
     const steps =
       content?.prologue && content.prologue.length > 0 ? content.prologue : DEFAULT_PROLOGUE[gradeBand];
-    return <PrologueView steps={steps} />;
-  }
-
-  if (phase === 'gallery' && meta) {
-    if (!enteredGallery) {
-      return <GalleryScene onEnter={() => setEnteredGallery(true)} />;
-    }
+    view = <PrologueView steps={steps} />;
+  } else if (phase === 'gallery' && meta) {
     const common = sortByOrder(artworks.filter((a) => a.placement?.kind === 'common'));
-    return (
+    view = !enteredGallery ? (
+      <GalleryScene onEnter={() => setEnteredGallery(true)} />
+    ) : (
       <GalleryView
         code={joined.code}
         studentNumber={joined.number}
@@ -210,10 +217,8 @@ function StudentSession({ joined }: { joined: Joined }) {
         showTitle={meta.showCommonTitles !== false}
       />
     );
-  }
-
-  if (phase === 'branch' && meta) {
-    return (
+  } else if (phase === 'branch' && meta) {
+    view = (
       <BranchView
         code={joined.code}
         studentNumber={joined.number}
@@ -223,10 +228,8 @@ function StudentSession({ joined }: { joined: Joined }) {
         artworks={artworks}
       />
     );
-  }
-
-  if (phase === 'auction' && meta) {
-    return (
+  } else if (phase === 'auction' && meta) {
+    view = (
       <StudentAuctionView
         code={joined.code}
         studentNumber={joined.number}
@@ -234,26 +237,34 @@ function StudentSession({ joined }: { joined: Joined }) {
         artworks={artworks}
       />
     );
+  } else if (phase === 'result') {
+    view = <ResultsView code={joined.code} />;
+  } else {
+    view = (
+      <MuseumShell title={`${joined.name} 님`} route="/play">
+        <div className="mt-6 text-center">
+          <div className="text-sm text-cream-dim">
+            {joined.number}번 · 코드 {joined.code}
+          </div>
+          <div className="mt-4 font-display text-3xl italic" style={{ color: GOLD }}>
+            {PHASE_LABELS[phase]}
+          </div>
+          <div className="mt-2 text-xs text-cream-dim">교사가 다음 단계를 열면 자동으로 이동해요</div>
+        </div>
+      </MuseumShell>
+    );
   }
 
-  if (phase === 'result') {
-    return <ResultsView code={joined.code} />;
-  }
-
-  // lobby / prologue 등: 대기 화면
   return (
-    <MuseumShell title={`${joined.name} 님`} route="/play">
-      <div className="mt-6 text-center">
-        <div className="text-sm text-cream-dim">
-          {joined.number}번 · 코드 {joined.code}
-        </div>
-        <div className="mt-4 font-display text-3xl italic" style={{ color: GOLD }}>
-          {PHASE_LABELS[phase]}
-        </div>
-        <div className="mt-2 text-xs text-cream-dim">
-          교사가 다음 단계를 열면 자동으로 이동해요
-        </div>
-      </div>
-    </MuseumShell>
+    <>
+      {view}
+      <button
+        onClick={() => { if (window.confirm('미술관에서 나가시겠어요?')) onExit(); }}
+        className="fixed right-3 top-3 z-[300] rounded-full border px-3 py-1.5 text-xs"
+        style={{ borderColor: 'rgba(224,160,160,0.4)', background: 'rgba(12,8,4,0.7)', color: 'rgba(232,217,184,0.8)' }}
+      >
+        나가기
+      </button>
+    </>
   );
 }

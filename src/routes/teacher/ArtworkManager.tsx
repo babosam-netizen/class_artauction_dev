@@ -170,6 +170,9 @@ export function ArtworkManager({ code }: { code: string }) {
             {importing ? '가져오는 중…' : '작품 가져오기'}
           </button>
         </div>
+        <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
+          학년이 달라도(5·6학년 → 3·4학년 등) 코드만 알면 가져올 수 있어요.
+        </div>
         {importMsg && <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.7)' }}>{importMsg}</div>}
       </div>
 
