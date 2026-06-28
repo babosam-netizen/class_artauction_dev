@@ -21,8 +21,10 @@ export function StageNavigator({ code, phase }: { code: string; phase: Phase }) 
           const current = i === idx;
           return (
             <div key={p} className="flex items-center">
-              <div
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm"
+              <button
+                onClick={() => setPhase(code, p)}
+                title={`${PHASE_LABELS[p]}(으)로 이동`}
+                className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm"
                 style={{
                   borderColor: current ? GOLD : 'rgba(196,167,90,0.25)',
                   background: current ? GOLD : done ? 'rgba(196,167,90,0.12)' : 'transparent',
@@ -40,7 +42,7 @@ export function StageNavigator({ code, phase }: { code: string; phase: Phase }) 
                   {done ? '✓' : i + 1}
                 </span>
                 {PHASE_LABELS[p]}
-              </div>
+              </button>
               {i < PHASE_ORDER.length - 1 && (
                 <span style={{ color: 'rgba(196,167,90,0.4)', margin: '0 2px' }}>→</span>
               )}
