@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { PHASE_LABELS } from '@/features/session/api';
+import { removeStudent, resetClass } from '@/features/teacher/admin';
 import { sortByOrder } from '@/features/artwork/api';
 import { DEFAULT_PROMPTS } from '@/content/prompts';
 import type {
@@ -148,6 +149,17 @@ export function Dashboard({ code, gradeBand }: { code: string; gradeBand: GradeB
             ) : (
               <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.4)' }}>아직 작품 미선택</div>
             )}
+
+            <button
+              onClick={() => {
+                if (window.confirm(`${s.number} ${s.name} 학생을 퇴장시키고 자료를 삭제할까요?`))
+                  removeStudent(code, s.number, true);
+              }}
+              className="mt-1 self-start rounded border px-2.5 py-1 text-[11px]"
+              style={{ borderColor: 'rgba(224,160,160,0.4)', color: 'rgba(224,160,160,0.85)' }}
+            >
+              학생 퇴장 · 자료 삭제
+            </button>
           </div>
         )}
       </div>
@@ -201,6 +213,18 @@ export function Dashboard({ code, gradeBand }: { code: string; gradeBand: GradeB
           </div>
         </div>
       )}
+
+      {/* 반 초기화 */}
+      <button
+        onClick={() => {
+          if (window.confirm('반을 초기화할까요?\n학생·감상·경매·순위가 모두 삭제되고 단계가 처음으로 돌아갑니다.\n(작품·설정은 유지됩니다)'))
+            resetClass(code);
+        }}
+        className="mt-1 self-start rounded-full border px-4 py-2 text-xs"
+        style={{ borderColor: 'rgba(224,160,160,0.4)', color: 'rgba(224,160,160,0.85)' }}
+      >
+        ⚠️ 반 초기화 (학생·기록·경매·순위 삭제)
+      </button>
 
       {modal && <AnswerLayer m={modal} onClose={() => setModal(null)} />}
     </div>
