@@ -109,7 +109,7 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
     return (
       <Wall>
         <div className="text-center">
-          <div className="font-display text-3xl italic" style={{ color: C.cream }}>분기 전시실 준비 중</div>
+          <div className="font-display text-3xl italic" style={{ color: C.cream }}>선택작품감상실 준비 중</div>
           <div className="mt-2 text-sm" style={{ color: C.creamDim }}>선생님이 작품을 올리면 시작해요</div>
         </div>
       </Wall>
@@ -122,9 +122,8 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
       <Wall>
         <div className="flex flex-col items-center px-6 text-center">
           {current.imageUrl && (
-            <img src={current.imageUrl} alt={current.title} className="h-44 w-64 rounded object-cover" style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }} />
+            <img src={current.imageUrl} alt="작품" className="h-44 w-64 rounded object-cover" style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }} />
           )}
-          <div className="mt-4 font-display text-2xl italic" style={{ color: C.cream }}>{current.title}</div>
           <div className="mt-4 text-lg" style={{ color: C.green }}>✅ 감상을 제출했어요</div>
           <div className="mt-1 text-sm" style={{ color: C.creamDim }}>{studentName} 님, 경매를 기다려요</div>
           <button
@@ -145,15 +144,14 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
       <Wall scroll>
         <div className="mx-auto max-w-4xl px-6 py-10">
           <div className="text-center">
-            <div className="text-xs tracking-[4px]" style={{ color: 'rgba(196,167,90,0.7)' }}>분기 전시실</div>
+            <div className="text-xs tracking-[4px]" style={{ color: 'rgba(196,167,90,0.7)' }}>선택작품감상실</div>
             <div className="mt-2 font-display text-4xl italic" style={{ color: C.cream }}>마음에 드는 작품 1점을 골라요</div>
             <div className="mt-2 text-sm" style={{ color: C.creamDim }}>{pool.length}점 중 하나를 골라 감상을 써요</div>
           </div>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {pool.map((a) => (
               <button key={a.id} onClick={() => choose(a)} className="overflow-hidden rounded-lg border text-left" style={{ borderColor: C.goldSoft, background: 'rgba(28,18,10,0.6)' }}>
-                {a.imageUrl && <img src={a.imageUrl} alt={a.title} className="h-32 w-full object-cover" />}
-                <div className="p-2 font-display text-base italic" style={{ color: C.cream }}>{a.title}</div>
+                {a.imageUrl && <img src={a.imageUrl} alt="작품" className="h-36 w-full object-cover" />}
               </button>
             ))}
           </div>
@@ -169,19 +167,18 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
         <div className="flex flex-col items-center" style={{ animation: 'fadeUp 0.5s ease' }}>
           <div style={{ background: C.frame, padding: 16, boxShadow: '0 0 0 1.5px rgba(80,50,5,0.9), 0 28px 80px rgba(0,0,0,0.9)' }}>
             <div style={{ border: '3px solid rgba(50,32,4,0.7)', padding: 4, background: '#0e0903' }}>
-              <img src={current.imageUrl} alt={current.title} style={{ width: 'min(52vh,82vw)', height: 'min(38vh,60vw)', objectFit: 'cover', display: 'block' }} />
+              <img src={current.imageUrl} alt="작품" style={{ width: 'min(52vh,82vw)', height: 'min(38vh,60vw)', objectFit: 'cover', display: 'block' }} />
             </div>
           </div>
-          <div className="mt-3 font-display text-2xl italic" style={{ color: C.cream }}>{current.title}</div>
-          <button onClick={() => setPicked(null)} className="mt-2 text-xs" style={{ color: C.creamDim }}>← 다른 작품 고르기</button>
+          <button onClick={() => setPicked(null)} className="mt-3 text-xs" style={{ color: C.creamDim }}>← 다른 작품 고르기</button>
         </div>
       </div>
 
       {/* 감상 패널 */}
       <div className="relative z-[5] flex w-[360px] min-w-[360px] flex-col" style={{ background: C.panel, borderLeft: '1px solid rgba(196,167,90,0.18)', animation: 'panelIn 0.35s ease' }}>
         <div className="border-b px-6 pb-4 pt-7" style={{ borderColor: 'rgba(196,167,90,0.12)' }}>
-          <div className="text-[10px] tracking-[2px]" style={{ color: 'rgba(196,167,90,0.6)' }}>나의 감상 기록 · 분기</div>
-          <div className="mt-1 font-display text-lg italic" style={{ color: C.cream }}>{current.title}</div>
+          <div className="text-[10px] tracking-[2px]" style={{ color: 'rgba(196,167,90,0.6)' }}>나의 감상 기록 · 선택작품감상실</div>
+          <div className="mt-1 font-display text-lg italic" style={{ color: C.cream }}>작품</div>
         </div>
         <div className="flex items-center gap-2 px-6 pt-4">
           {prompts.map((_, i) => {

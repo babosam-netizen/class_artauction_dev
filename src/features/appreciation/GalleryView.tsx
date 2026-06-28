@@ -28,6 +28,7 @@ interface GalleryViewProps {
   artworks: Artwork[];
   phase?: Phase;
   demo?: boolean;
+  showTitle?: boolean;
 }
 
 export function GalleryView({
@@ -39,6 +40,7 @@ export function GalleryView({
   artworks,
   phase = 'gallery',
   demo = false,
+  showTitle = true,
 }: GalleryViewProps) {
   const [index, setIndex] = useState(0);
   const [open, setOpen] = useState(false);
@@ -153,9 +155,11 @@ export function GalleryView({
           </div>
 
           <div className="mt-4 text-center" style={{ animation: 'fadeUp 0.5s ease 0.1s both' }}>
-            <div className="font-display text-2xl italic" style={{ color: C.cream, letterSpacing: '0.5px' }}>
-              {current.title}
-            </div>
+            {showTitle && (
+              <div className="font-display text-2xl italic" style={{ color: C.cream, letterSpacing: '0.5px' }}>
+                {current.title}
+              </div>
+            )}
 
             {/* 작품 진행 도트 */}
             <div className="mt-3 flex justify-center gap-[7px]">
@@ -202,7 +206,7 @@ export function GalleryView({
         <div className="relative z-[5] flex w-[360px] min-w-[360px] flex-col" style={{ background: C.panel, borderLeft: '1px solid rgba(196,167,90,0.18)', animation: 'panelIn 0.35s ease' }}>
           <div className="border-b px-6 pb-4 pt-7" style={{ borderColor: 'rgba(196,167,90,0.12)' }}>
             <div className="text-[10px] tracking-[2px]" style={{ color: 'rgba(196,167,90,0.6)' }}>나의 감상 기록</div>
-            <div className="mt-1 font-display text-lg italic" style={{ color: C.cream }}>{current.title}</div>
+            <div className="mt-1 font-display text-lg italic" style={{ color: C.cream }}>{showTitle ? current.title : '작품'}</div>
           </div>
 
           {/* 질문 번호 탭 (N개임을 명확히) */}
@@ -284,7 +288,7 @@ export function GalleryView({
 
       {showCommentary && allAnswered && (
         <CommentaryOverlay
-          title={current.title}
+          title={showTitle ? current.title : '작품'}
           commentary={current.commentary}
           isLast={index === total - 1}
           studentName={studentName}

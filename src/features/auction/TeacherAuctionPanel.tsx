@@ -43,7 +43,7 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
       {items.length === 0 &&
         (forAuctionCount === 0 ? (
           <div className="rounded border p-3 text-xs" style={{ borderColor: 'rgba(224,160,160,0.4)', color: 'rgba(224,160,160,0.9)' }}>
-            경매 대상 작품이 없어요. "작품 관리"에서 <b>분기(경매)</b> 작품을 올리거나 <b>경매 대상</b>을 체크하세요.
+            경매 대상 작품이 없어요. "작품 관리"에서 <b>선택작품감상실(경매)</b> 작품을 올리거나 <b>경매 대상</b>을 체크하세요.
           </div>
         ) : (
           <button onClick={() => initAuction(code, artworks)} className="w-full rounded-full border py-2.5 text-sm" style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.15)', color: '#ead9b8' }}>

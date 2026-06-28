@@ -44,11 +44,8 @@ export function Dashboard({ code, gradeBand }: { code: string; gradeBand: GradeB
   const common = sortByOrder(artworks.filter((a) => a.placement?.kind === 'common'));
   const branch = sortByOrder(artworks.filter((a) => a.placement?.kind === 'branch'));
   const ordered: { art: Artwork; label: string }[] = [
-    ...common.map((art, i) => ({ art, label: `공통회랑 ${i + 1}` })),
-    ...branch.map((art) => ({
-      art,
-      label: `분기 ${(art.placement.kind === 'branch' ? art.placement.door : 0) + 1}번문`,
-    })),
+    ...common.map((art, i) => ({ art, label: `공통 ${i + 1}` })),
+    ...branch.map((art, i) => ({ art, label: `선택 ${i + 1}` })),
   ];
   const totalQ = Math.max(1, ordered.length * prompts.length);
   const now = Date.now();

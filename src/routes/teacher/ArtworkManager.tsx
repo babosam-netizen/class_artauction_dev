@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useRtdbList } from '@/firebase/hooks';
+import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { addArtwork, removeArtwork, updateArtwork, sortByOrder } from '@/features/artwork/api';
+import { setShowCommonTitles } from '@/features/session/api';
 import { uploadImage, loadImageServerUrl, saveImageServerUrl } from '@/features/artwork/upload';
-import type { Artwork, Placement } from '@/models';
+import type { Artwork, Placement, SessionMeta } from '@/models';
 
 const GOLD = '#c4975a';
 const BORDER = 'rgba(196,167,90,0.4)';
@@ -12,6 +13,8 @@ const inputStyle = { borderColor: BORDER, color: '#ead9b8' };
 
 export function ArtworkManager({ code }: { code: string }) {
   const artworks = sortByOrder(useRtdbList<Artwork>(paths.artworks(code)));
+  const meta = useRtdbValue<SessionMeta>(paths.meta(code));
+  const showTitles = meta?.showCommonTitles !== false;
   const [serverUrl, setServerUrl] = useState(loadImageServerUrl());
   const [editingServer, setEditingServer] = useState(false);
   const [uploading, setUploading] = useState('');
@@ -73,7 +76,16 @@ export function ArtworkManager({ code }: { code: string }) {
 
   return (
     <div className="w-full rounded-lg border p-5 text-left" style={{ borderColor: 'rgba(196,167,90,0.2)', background: 'rgba(28,18,10,0.6)' }}>
-      <div className="mb-3 text-sm font-medium" style={{ color: GOLD }}>작품 관리 ({artworks.length})</div>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-medium" style={{ color: GOLD }}>작품 관리 ({artworks.length})</span>
+        <label className="flex items-center gap-1.5 text-xs" style={{ color: '#ead9b8' }}>
+          <input type="checkbox" checked={showTitles} onChange={(e) => setShowCommonTitles(code, e.target.checked)} />
+          공통 작품 이름 표시
+        </label>
+      </div>
+      <div className="mb-3 text-[11px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
+        선택작품감상실 작품은 이름이 항상 가려집니다(그림만).
+      </div>
 
       {/* 이미지 서버 + 일괄 업로드 */}
       <div className="mb-3 flex flex-col gap-2 rounded border p-3" style={{ borderColor: 'rgba(196,167,90,0.15)' }}>
@@ -181,8 +193,8 @@ function ArtworkCard({ code, art }: { code: string; art: Artwork }) {
             className={inputCls}
             style={{ ...inputStyle, background: '#1c120a' }}
           >
-            <option value="common">공통회랑(수행평가)</option>
-            <option value="branch">분기(경매)</option>
+            <option value="common">공통작품감상실(수행평가)</option>
+            <option value="branch">선택작품감상실(경매)</option>
           </select>
           <label className="flex items-center gap-1 text-xs" style={{ color: '#ead9b8' }}>
             <input type="checkbox" defaultChecked={art.forAuction} onChange={(e) => save({ forAuction: e.target.checked })} />

@@ -30,8 +30,8 @@ export const PHASE_ORDER: Phase[] = ['prologue', 'gallery', 'branch', 'auction',
 export const PHASE_LABELS: Record<Phase, string> = {
   lobby: '로비 (대기)',
   prologue: '프롤로그',
-  gallery: '공통회랑',
-  branch: '회랑 분기',
+  gallery: '공통작품감상실',
+  branch: '선택작품감상실',
   auction: '경매장',
   result: '결과 발표',
 };
@@ -75,6 +75,7 @@ export async function createSession(params: CreateSessionParams): Promise<string
     groupAssignMode: params.groupAssignMode ?? 'preset',
     groupCount: params.groupCount,
     groupSize: params.groupSize,
+    showCommonTitles: true,
     createdAt: Date.now(),
   };
   const state: SessionState = { phase: 'prologue' };
@@ -117,4 +118,9 @@ export async function saveContent(code: string, content: SessionContent): Promis
 /** 결과 발표: 감정가·순위 공개 토글. */
 export async function setReveal(code: string, reveal: boolean): Promise<void> {
   await update(ref(db, paths.state(code)), { revealValues: reveal });
+}
+
+/** 공통작품감상실 작품 이름 표시 여부 설정. */
+export async function setShowCommonTitles(code: string, show: boolean): Promise<void> {
+  await update(ref(db, paths.meta(code)), { showCommonTitles: show });
 }

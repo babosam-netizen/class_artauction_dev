@@ -82,6 +82,8 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export function TvGallery({ code }: { code: string }) {
+  const meta = useRtdbValue<SessionMeta>(paths.meta(code));
+  const showTitle = meta?.showCommonTitles !== false;
   const arts = useRtdbList<Artwork>(paths.artworks(code)).filter((a) => a.placement?.kind === 'common');
   const key = arts.map((a) => a.id).join(',');
   const shuffled = useMemo(() => shuffle(arts), [key]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -96,7 +98,7 @@ export function TvGallery({ code }: { code: string }) {
     return (
       <Wall>
         <div className="text-center">
-          <div className="font-display text-5xl italic" style={{ color: C.cream }}>공통 전시실</div>
+          <div className="font-display text-5xl italic" style={{ color: C.cream }}>공통작품감상실</div>
           <div className="mt-3 text-xl" style={{ color: C.creamDim }}>작품을 준비하고 있어요</div>
         </div>
       </Wall>
@@ -107,14 +109,14 @@ export function TvGallery({ code }: { code: string }) {
   return (
     <Wall>
       <div className="flex flex-col items-center">
-        <div className="text-xs tracking-[5px]" style={{ color: 'rgba(196,167,90,0.7)' }}>공통 전시실</div>
+        <div className="text-xs tracking-[5px]" style={{ color: 'rgba(196,167,90,0.7)' }}>공통작품감상실</div>
         <div key={cur.id} className="mt-5 flex flex-col items-center" style={{ animation: 'fadeUp 0.6s ease' }}>
           <div style={{ background: C.frame, padding: 16, boxShadow: '0 0 0 1.5px rgba(80,50,5,0.9), 0 32px 90px rgba(0,0,0,0.9)' }}>
             <div style={{ border: '3px solid rgba(50,32,4,0.7)', padding: 4, background: '#0e0903' }}>
               <img src={cur.imageUrl} alt={cur.title} style={{ width: 'min(72vh,80vw)', height: 'min(50vh,56vw)', objectFit: 'cover', display: 'block' }} />
             </div>
           </div>
-          <div className="mt-5 font-display text-4xl italic" style={{ color: C.cream }}>{cur.title}</div>
+          {showTitle && <div className="mt-5 font-display text-4xl italic" style={{ color: C.cream }}>{cur.title}</div>}
         </div>
         <Dots n={shuffled.length} active={i % shuffled.length} />
       </div>
@@ -128,7 +130,7 @@ export function TvBranch({ code }: { code: string }) {
   return (
     <Wall>
       <div className="flex max-h-screen flex-col items-center overflow-auto px-10 py-8">
-        <div className="text-xs tracking-[5px]" style={{ color: 'rgba(196,167,90,0.7)' }}>분기 전시실</div>
+        <div className="text-xs tracking-[5px]" style={{ color: 'rgba(196,167,90,0.7)' }}>선택작품감상실</div>
         <div className="mt-2 font-display text-4xl italic" style={{ color: C.cream }}>
           마음에 드는 작품 1점을 골라요
         </div>
@@ -136,8 +138,7 @@ export function TvBranch({ code }: { code: string }) {
         <div className="mt-7 grid grid-cols-4 gap-4">
           {arts.map((a) => (
             <div key={a.id} className="w-40 overflow-hidden rounded-lg border" style={{ borderColor: 'rgba(196,167,90,0.4)', background: 'rgba(28,18,10,0.6)' }}>
-              {a.imageUrl && <img src={a.imageUrl} alt={a.title} className="h-24 w-full object-cover" />}
-              <div className="p-1.5 text-center font-display text-base italic" style={{ color: C.cream }}>{a.title}</div>
+              {a.imageUrl && <img src={a.imageUrl} alt="작품" className="h-28 w-full object-cover" />}
             </div>
           ))}
         </div>

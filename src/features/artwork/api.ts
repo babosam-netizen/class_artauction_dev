@@ -40,7 +40,7 @@ export async function removeArtwork(code: string, id: string): Promise<void> {
 
 /** 배치 라벨 (공통회랑 / 분기 N) */
 export function placementLabel(p: Placement): string {
-  return p.kind === 'common' ? '공통회랑' : `분기 ${p.door + 1}번 문`;
+  return p.kind === 'common' ? '공통작품감상실' : '선택작품감상실';
 }
 
 export function sortByOrder<T extends { order: number }>(items: T[]): T[] {

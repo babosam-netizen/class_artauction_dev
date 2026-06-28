@@ -12,6 +12,7 @@ export interface SessionMeta {
   groupAssignMode: GroupAssignMode;
   groupCount: number;
   groupSize: number; // 모둠당 정원
+  showCommonTitles?: boolean; // 공통작품감상실에서 작품 이름 표시 여부 (교사 설정)
   createdAt: Timestamp;
 }
 

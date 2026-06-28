@@ -207,6 +207,7 @@ function StudentSession({ joined }: { joined: Joined }) {
         gradeBand={gradeBand}
         prompts={prompts}
         artworks={common}
+        showTitle={meta.showCommonTitles !== false}
       />
     );
   }

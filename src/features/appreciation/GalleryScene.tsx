@@ -13,8 +13,8 @@ interface Props {
 
 /** RPG식 입장 장면 — 전시실에 들어서는 연출. */
 export function GalleryScene({
-  title = '공통 전시실',
-  subtitle = '모두가 함께 보는 전시실이에요. 작품을 천천히 둘러보며 질문에 답해 볼까요?',
+  title = '공통작품감상실',
+  subtitle = '모두가 함께 보는 곳이에요. 작품을 천천히 둘러보며 질문에 답해 볼까요?',
   onEnter,
 }: Props) {
   return (
