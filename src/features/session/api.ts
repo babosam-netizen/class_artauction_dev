@@ -76,6 +76,7 @@ export async function createSession(params: CreateSessionParams): Promise<string
     groupCount: params.groupCount,
     groupSize: params.groupSize,
     showCommonTitles: true,
+    auctionMode: 'live',
     createdAt: Date.now(),
   };
   const state: SessionState = { phase: 'prologue' };
@@ -123,4 +124,9 @@ export async function setReveal(code: string, reveal: boolean): Promise<void> {
 /** 공통작품감상실 작품 이름 표시 여부 설정. */
 export async function setShowCommonTitles(code: string, show: boolean): Promise<void> {
   await update(ref(db, paths.meta(code)), { showCommonTitles: show });
+}
+
+/** 경매 방식 설정. */
+export async function setAuctionMode(code: string, mode: import('@/models').AuctionMode): Promise<void> {
+  await update(ref(db, paths.meta(code)), { auctionMode: mode });
 }

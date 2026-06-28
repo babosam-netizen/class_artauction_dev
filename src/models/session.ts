@@ -1,4 +1,4 @@
-import type { GradeBand, GroupAssignMode, Phase, Timestamp, Won } from './common';
+import type { AuctionMode, GradeBand, GroupAssignMode, Phase, Timestamp, Won } from './common';
 
 export interface SessionMeta {
   code: string;
@@ -13,6 +13,7 @@ export interface SessionMeta {
   groupCount: number;
   groupSize: number; // 모둠당 정원
   showCommonTitles?: boolean; // 공통작품감상실에서 작품 이름 표시 여부 (교사 설정)
+  auctionMode?: AuctionMode; // 경매 방식 (기본 live)
   createdAt: Timestamp;
 }
 

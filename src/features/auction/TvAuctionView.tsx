@@ -1,7 +1,7 @@
 import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { participantIds } from './api';
-import type { Artwork, AuctionItem, Group, SessionState } from '@/models';
+import type { Artwork, AuctionItem, Group, SessionMeta, SessionState } from '@/models';
 
 const C = {
   gold: '#c4975a',
@@ -13,16 +13,20 @@ const C = {
 
 export function TvAuctionView({ code }: { code: string }) {
   const state = useRtdbValue<SessionState>(paths.state(code));
+  const meta = useRtdbValue<SessionMeta>(paths.meta(code));
   const currentId = state?.currentAuctionArtworkId;
   const item = useRtdbValue<AuctionItem>(currentId ? paths.auctionItem(code, currentId) : null);
   const artworks = useRtdbList<Artwork>(paths.artworks(code));
   const groupsMap = useRtdbValue<Record<string, Group>>(paths.groups(code));
 
+  const mode = meta?.auctionMode ?? 'live';
   const artwork = artworks.find((a) => a.id === currentId);
   const groupName = (id: string) => groupsMap?.[id]?.name ?? id;
   const inIds = participantIds(item);
+  const bidCount = item?.bids ? Object.keys(item.bids).length : 0;
   const sold = item?.status === 'sold';
   const passed = item?.status === 'passed';
+  const allGroups = Object.values(groupsMap ?? {}).sort((a, b) => a.name.localeCompare(b.name));
 
   if (!artwork) {
     return (
@@ -35,52 +39,45 @@ export function TvAuctionView({ code }: { code: string }) {
   return (
     <div className="flex h-screen items-center justify-center font-body" style={{ background: C.wall }}>
       <div className="flex w-full max-w-6xl items-center gap-12 px-12">
-        {/* 작품 + 낙찰 도장 */}
         <div className="relative w-1/2">
-          <img src={artwork.imageUrl} alt={artwork.title} className="h-[60vh] w-full rounded object-cover" style={{ boxShadow: '0 30px 90px rgba(0,0,0,0.85)', opacity: sold ? 0.85 : 1 }} />
+          <img src={artwork.imageUrl} alt={artwork.title} className="h-[60vh] w-full rounded object-contain" style={{ boxShadow: '0 30px 90px rgba(0,0,0,0.85)', opacity: sold ? 0.85 : 1, background: '#0e0903' }} />
           {sold && (
-            <div
-              className="absolute left-1/2 top-1/2 flex items-center justify-center rounded-2xl"
-              style={{
-                border: '8px solid #d23',
-                color: '#d23',
-                padding: '12px 36px',
-                fontSize: 64,
-                fontWeight: 900,
-                letterSpacing: 8,
-                background: 'rgba(255,255,255,0.86)',
-                animation: 'stampIn 0.5s cubic-bezier(.2,1.4,.4,1) both',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
-              }}
-            >
-              낙찰
-            </div>
+            <div className="absolute left-1/2 top-1/2 flex items-center justify-center rounded-2xl" style={{ border: '8px solid #d23', color: '#d23', padding: '12px 36px', fontSize: 64, fontWeight: 900, letterSpacing: 8, background: 'rgba(255,255,255,0.86)', animation: 'stampIn 0.5s cubic-bezier(.2,1.4,.4,1) both', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>낙찰</div>
           )}
         </div>
 
-        {/* 정보 */}
         <div className="flex-1">
           <div className="font-display text-5xl italic" style={{ color: C.cream }}>{artwork.title}</div>
-          <div className="mt-8 text-lg" style={{ color: C.creamDim }}>현재 호가</div>
-          <div className="font-display text-7xl" style={{ color: C.gold }}>{(item?.askingPrice ?? 0).toLocaleString()}원</div>
 
           {sold ? (
-            <div className="mt-4 font-display text-4xl italic" style={{ color: C.green, animation: 'popIn 0.4s ease both' }}>
-              🔨 {groupName(item!.winnerGroupId ?? '')} 낙찰!
-            </div>
+            <>
+              <div className="mt-6 text-lg" style={{ color: C.creamDim }}>낙찰가</div>
+              <div className="font-display text-7xl" style={{ color: C.gold }}>{(item?.askingPrice ?? 0).toLocaleString()}원</div>
+              <div className="mt-3 font-display text-4xl italic" style={{ color: C.green, animation: 'popIn 0.4s ease both' }}>🔨 {groupName(item!.winnerGroupId ?? '')} 낙찰!</div>
+            </>
           ) : passed ? (
-            <div className="mt-4 font-display text-4xl italic" style={{ color: C.creamDim }}>유찰</div>
+            <div className="mt-6 font-display text-4xl italic" style={{ color: C.creamDim }}>유찰</div>
+          ) : mode === 'sealed' ? (
+            <>
+              <div className="mt-8 font-display text-5xl" style={{ color: C.gold }}>입찰 진행 중</div>
+              <div className="mt-3 text-2xl" style={{ color: C.cream }}>{bidCount}팀 입찰 완료</div>
+              <div className="mt-1 text-sm" style={{ color: C.creamDim }}>금액은 비공개로 제출돼요</div>
+            </>
+          ) : mode === 'manual' ? (
+            <>
+              <div className="mt-8 text-lg" style={{ color: C.creamDim }}>현재 호가</div>
+              <div className="font-display text-7xl" style={{ color: C.gold }}>{(item?.askingPrice ?? 0).toLocaleString()}원</div>
+              <div className="mt-3 text-2xl" style={{ color: C.cream }}>손을 들어 참여하세요 ✋</div>
+            </>
           ) : (
             <>
+              <div className="mt-6 text-lg" style={{ color: C.creamDim }}>현재 호가</div>
+              <div className="font-display text-7xl" style={{ color: C.gold }}>{(item?.askingPrice ?? 0).toLocaleString()}원</div>
               <div className="mt-6 text-lg" style={{ color: C.creamDim }}>참여 {inIds.length}팀</div>
               <div className="mt-2 flex flex-wrap gap-2">
-                {(Object.values(groupsMap ?? {})).sort((a, b) => a.name.localeCompare(b.name)).map((g) => {
+                {allGroups.map((g) => {
                   const isIn = inIds.includes(g.id);
-                  return (
-                    <span key={g.id} className="rounded-full px-4 py-2 text-xl" style={{ border: `2px solid ${isIn ? C.green : 'rgba(196,167,90,0.25)'}`, background: isIn ? 'rgba(143,206,143,0.18)' : 'transparent', color: isIn ? C.cream : 'rgba(232,217,184,0.35)', animation: isIn ? 'popIn 0.3s ease both' : undefined }}>
-                      {isIn ? '✋ ' : ''}{g.name}
-                    </span>
-                  );
+                  return <span key={g.id} className="rounded-full px-4 py-2 text-xl" style={{ border: `2px solid ${isIn ? C.green : 'rgba(196,167,90,0.25)'}`, background: isIn ? 'rgba(143,206,143,0.18)' : 'transparent', color: isIn ? C.cream : 'rgba(232,217,184,0.35)', animation: isIn ? 'popIn 0.3s ease both' : undefined }}>{isIn ? '✋ ' : ''}{g.name}</span>;
                 })}
               </div>
             </>

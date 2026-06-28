@@ -40,9 +40,30 @@ export async function presentArtwork(
     status: 'live',
     askingPrice: startPrice,
     participants: null,
+    bids: null,
     winnerGroupId: null,
   });
   await update(ref(db, paths.state(code)), { currentAuctionArtworkId: artworkId });
+}
+
+/** 입찰경매: 모둠 입찰 금액 제출(0이면 취소). */
+export async function submitBid(
+  code: string,
+  artworkId: string,
+  groupId: string,
+  amount: number,
+): Promise<void> {
+  await set(ref(db, `${paths.auctionItem(code, artworkId)}/bids/${groupId}`), amount > 0 ? amount : null);
+}
+
+/** 입찰 내역에서 최고가. */
+export function highestBid(item: AuctionItem | undefined): { groupId: string; amount: number } | null {
+  if (!item?.bids) return null;
+  let best: { groupId: string; amount: number } | null = null;
+  for (const [g, amt] of Object.entries(item.bids)) {
+    if (best === null || amt > best.amount) best = { groupId: g, amount: amt };
+  }
+  return best;
 }
 
 /** 호가 올리기 (+증가폭). */
