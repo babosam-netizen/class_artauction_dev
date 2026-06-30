@@ -8,7 +8,7 @@ import type { Artwork, Placement, SessionMeta } from '@/models';
 
 interface RawSessionForImport {
   meta?: SessionMeta;
-  artworks?: Record<string, { id: string }>;
+  artworks?: Record<string, { id: string; isPrivate?: boolean }>;
 }
 
 const GOLD = '#c4975a';
@@ -40,7 +40,9 @@ export function ArtworkManager({ code }: { code: string }) {
         className: s.meta?.className,
         teacherName: s.meta?.teacherName,
         gradeBand: s.meta?.gradeBand,
-        artworkCount: s.artworks ? Object.keys(s.artworks).length : 0,
+        artworkCount: s.artworks
+          ? Object.values(s.artworks).filter((a) => !a.isPrivate).length
+          : 0,
         createdAt: s.meta?.createdAt ?? 0,
       }))
       .sort((a, b) => b.createdAt - a.createdAt);
@@ -193,7 +195,7 @@ export function ArtworkManager({ code }: { code: string }) {
                 <option key={s.code} value={s.code}>
                   {s.className || '(이름 없는 반)'}
                   {s.teacherName ? ` · ${s.teacherName}` : ''}
-                  {` — 작품 ${s.artworkCount}점`}
+                  {` — 공유 가능 ${s.artworkCount}점`}
                   {` [${s.code}]`}
                 </option>
               ))}
@@ -283,6 +285,18 @@ function ArtworkCard({ code, art }: { code: string; art: Artwork }) {
           <label className="flex items-center gap-1 text-xs" style={{ color: '#ead9b8' }}>
             <input type="checkbox" defaultChecked={art.forAuction} onChange={(e) => save({ forAuction: e.target.checked })} />
             경매 대상
+          </label>
+          <label
+            className="flex items-center gap-1 text-xs"
+            title="체크하면 다른 반 '작품 가져오기'에서 이 작품이 보이지 않아요"
+            style={{ color: art.isPrivate ? '#e0a0a0' : 'rgba(232,217,184,0.55)' }}
+          >
+            <input
+              type="checkbox"
+              defaultChecked={art.isPrivate ?? false}
+              onChange={(e) => save({ isPrivate: e.target.checked })}
+            />
+            🔒 공유 안 함
           </label>
           <button onClick={() => removeArtwork(code, art.id)} className="ml-auto text-xs" style={{ color: 'rgba(224,160,160,0.8)' }}>삭제</button>
         </div>

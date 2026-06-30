@@ -12,4 +12,5 @@ export interface Artwork {
   placement: Placement;
   forAuction: boolean;
   order: number;
+  isPrivate?: boolean; // true이면 다른 반 가져오기에서 제외
 }

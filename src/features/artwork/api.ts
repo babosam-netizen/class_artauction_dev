@@ -55,7 +55,9 @@ export async function copyArtworksFrom(
 ): Promise<number> {
   const snap = await get(ref(db, paths.artworks(fromCode)));
   if (!snap.exists()) return 0;
-  const src = sortByOrder(Object.values(snap.val()) as Artwork[]);
+  const src = sortByOrder(
+    (Object.values(snap.val()) as Artwork[]).filter((a) => !a.isPrivate),
+  );
   let i = 0;
   for (const a of src) {
     await addArtwork(
