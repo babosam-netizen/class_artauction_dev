@@ -248,33 +248,26 @@ export function GalleryView({
               style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(196,167,90,0.2)', color: C.creamDim }}
             />
 
-            {step < qCount - 1 ? (
-              <button
-                onClick={saveAndNext}
-                disabled={busy || !answers[step].trim()}
-                className="rounded-lg border py-3 text-center text-sm disabled:opacity-40"
-                style={{ background: 'rgba(196,167,90,0.15)', borderColor: C.gold, color: C.cream }}
-              >
-                {busy ? '저장 중…' : `저장하고 다음 질문 (${step + 2}/${qCount}) →`}
-              </button>
-            ) : (
-              <button
-                onClick={saveAndNext}
-                disabled={busy || !answers[step].trim()}
-                className="rounded-lg border py-3 text-center text-sm disabled:opacity-40"
-                style={{ background: 'rgba(196,167,90,0.15)', borderColor: C.gold, color: C.cream }}
-              >
-                {busy ? '저장 중…' : '이 질문 저장'}
-              </button>
-            )}
+            <button
+              onClick={saveAndNext}
+              disabled={busy || !answers[step].trim()}
+              className="rounded-xl border py-4 text-center text-base font-bold disabled:opacity-40"
+              style={{ background: answers[step].trim() ? 'rgba(196,167,90,0.22)' : 'transparent', borderColor: C.gold, color: C.cream, boxShadow: answers[step].trim() ? '0 0 18px rgba(196,167,90,0.25)' : 'none' }}
+            >
+              {busy
+                ? '제출 중…'
+                : step < qCount - 1
+                ? `✏️ 답변 제출 → 다음 질문 (${step + 2}/${qCount})`
+                : '✏️ 답변 제출'}
+            </button>
 
             {allAnswered ? (
               <button
                 onClick={() => { setOpen(false); setShowCommentary(true); }}
-                className="rounded-lg border py-3 text-center text-sm"
-                style={{ background: 'rgba(143,206,143,0.15)', borderColor: C.green, color: C.cream }}
+                className="rounded-xl border py-4 text-center text-base font-bold"
+                style={{ background: 'rgba(143,206,143,0.2)', borderColor: C.green, color: C.cream, boxShadow: '0 0 18px rgba(143,206,143,0.2)' }}
               >
-                ✅ {qCount}개 질문 완료 — 해설 보기 →
+                ✅ {qCount}개 답변 완료 — 해설 보기 →
               </button>
             ) : (
               <div className="text-center text-[11px]" style={{ color: 'rgba(232,217,184,0.45)' }}>

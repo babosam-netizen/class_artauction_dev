@@ -197,11 +197,11 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
         </div>
         <div className="flex flex-1 flex-col gap-3 px-6 pb-5">
           <textarea value={answers[step]} onChange={(e) => setAnswer(e.target.value)} placeholder="여기에 감상을 적어보세요..." className="min-h-[110px] flex-1 resize-none rounded border p-3.5 text-[13px] leading-[1.7] outline-none" style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(196,167,90,0.2)', color: C.creamDim }} />
-          <button onClick={saveStep} disabled={busy || !answers[step].trim()} className="rounded-lg border py-3 text-center text-sm disabled:opacity-40" style={{ background: 'rgba(196,167,90,0.13)', borderColor: C.gold, color: C.cream }}>
-            {busy ? '저장 중…' : step < prompts.length - 1 ? `저장하고 다음 질문 (${step + 2}/${prompts.length}) →` : '이 질문 저장'}
+          <button onClick={saveStep} disabled={busy || !answers[step].trim()} className="rounded-xl border py-4 text-center text-base font-bold disabled:opacity-40" style={{ background: answers[step].trim() ? 'rgba(196,167,90,0.22)' : 'transparent', borderColor: C.gold, color: C.cream, boxShadow: answers[step].trim() ? '0 0 18px rgba(196,167,90,0.25)' : 'none' }}>
+            {busy ? '제출 중…' : step < prompts.length - 1 ? `✏️ 답변 제출 → 다음 질문 (${step + 2}/${prompts.length})` : '✏️ 답변 제출'}
           </button>
-          <button onClick={submit} disabled={busy || !allAnswered} className="rounded-lg border py-3 text-center text-sm disabled:opacity-40" style={{ background: allAnswered ? 'rgba(143,206,143,0.15)' : 'transparent', borderColor: allAnswered ? C.green : 'rgba(196,167,90,0.25)', color: C.cream }}>
-            {allAnswered ? '제출하고 경매 기다리기 →' : `모든 질문에 답하면 제출 가능 (${answers.filter((a) => a.trim()).length}/${prompts.length})`}
+          <button onClick={submit} disabled={busy || !allAnswered} className="rounded-xl border py-4 text-center text-base font-bold disabled:opacity-40" style={{ background: allAnswered ? 'rgba(143,206,143,0.2)' : 'transparent', borderColor: allAnswered ? C.green : 'rgba(196,167,90,0.25)', color: C.cream, boxShadow: allAnswered ? '0 0 18px rgba(143,206,143,0.2)' : 'none' }}>
+            {allAnswered ? '✅ 최종 제출 — 경매 기다리기 →' : `모든 질문에 답하면 제출 가능 (${answers.filter((a) => a.trim()).length}/${prompts.length})`}
           </button>
         </div>
       </div>
