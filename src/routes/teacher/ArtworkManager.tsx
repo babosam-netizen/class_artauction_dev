@@ -17,13 +17,21 @@ interface RawSessionForImport {
   artworks?: Record<string, Artwork>;
 }
 
+// 가져오기 패널에서 보여줄 작품 (출처 반 정보 포함)
+interface SharedArtwork extends Artwork {
+  _srcCode: string;
+  _srcClassName?: string;
+}
+
 const GOLD = '#c4975a';
 const BORDER = 'rgba(196,167,90,0.4)';
 const inputCls = 'rounded border bg-transparent px-2.5 py-1.5 text-sm outline-none';
 const inputStyle = { borderColor: BORDER, color: '#ead9b8' };
 
-type ImportTab = 'common' | 'branch' | 'auction';
-const TAB_LABELS: Record<ImportTab, string> = {
+type BrowseTab = 'common' | 'branch' | 'auction';
+type DestType = 'common' | 'branch';
+
+const TAB_LABELS: Record<BrowseTab, string> = {
   common: '공통감상',
   branch: '선택감상',
   auction: '경매대상',
@@ -39,69 +47,67 @@ export function ArtworkManager({ code }: { code: string }) {
   const [error, setError] = useState('');
   const [urlInput, setUrlInput] = useState('');
 
-  // 다른 반 가져오기 상태
-  const [srcCode, setSrcCode] = useState('');
-  const [importTab, setImportTab] = useState<ImportTab>('common');
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // 가져오기 패널 상태
+  const [showImport, setShowImport] = useState(false);
+  const [browseTab, setBrowseTab] = useState<BrowseTab>('common');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set()); // "srcCode::id"
+  const [dest, setDest] = useState<DestType>('common');
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
 
-  // 모든 세션 구독 (반 목록 + 작품 데이터)
+  // 모든 세션의 공유 작품을 하나의 배열로 합산
   const allSessions = useRtdbValue<Record<string, RawSessionForImport>>(paths.sessionsRoot());
 
-  const otherSessions = useMemo(() => {
+  const allShared = useMemo<SharedArtwork[]>(() => {
     if (!allSessions) return [];
-    return Object.entries(allSessions)
-      .filter(([c]) => c !== code)
-      .map(([c, s]) => {
-        const all = s.artworks ? Object.values(s.artworks) : [];
-        const shared = all.filter((a) => !a.isPrivate);
-        return {
-          code: c,
-          className: s.meta?.className,
-          teacherName: s.meta?.teacherName,
-          gradeBand: s.meta?.gradeBand,
-          sharedCount: shared.length,
-          createdAt: s.meta?.createdAt ?? 0,
-        };
-      })
-      .sort((a, b) => b.createdAt - a.createdAt);
+    const result: SharedArtwork[] = [];
+    for (const [c, s] of Object.entries(allSessions)) {
+      if (c === code) continue;
+      if (!s.artworks) continue;
+      for (const a of Object.values(s.artworks)) {
+        if (a.isPrivate) continue;
+        result.push({
+          ...a,
+          _srcCode: c,
+          _srcClassName: s.meta?.className,
+        });
+      }
+    }
+    return sortByOrder(result);
   }, [allSessions, code]);
 
-  // 선택된 반의 공유 가능 작품 (탭별 필터)
-  const srcArtworks = useMemo<Artwork[]>(() => {
-    if (!srcCode || !allSessions?.[srcCode]?.artworks) return [];
-    const all = sortByOrder(
-      Object.values(allSessions[srcCode].artworks!).filter((a) => !a.isPrivate),
-    );
-    if (importTab === 'common') return all.filter((a) => a.placement?.kind === 'common');
-    if (importTab === 'branch') return all.filter((a) => a.placement?.kind === 'branch');
-    if (importTab === 'auction') return all.filter((a) => a.forAuction);
-    return all;
-  }, [allSessions, srcCode, importTab]);
+  const tabArtworks = useMemo<SharedArtwork[]>(() => {
+    if (browseTab === 'common') return allShared.filter((a) => a.placement?.kind === 'common');
+    if (browseTab === 'branch') return allShared.filter((a) => a.placement?.kind === 'branch');
+    return allShared.filter((a) => a.forAuction); // auction
+  }, [allShared, browseTab]);
 
-  function handleSelectSession(c: string) {
-    setSrcCode(c);
-    setSelectedIds(new Set());
-    setImportMsg('');
-    setImportTab('common');
-  }
+  // 탭 카운트
+  const counts: Record<BrowseTab, number> = useMemo(() => ({
+    common: allShared.filter((a) => a.placement?.kind === 'common').length,
+    branch: allShared.filter((a) => a.placement?.kind === 'branch').length,
+    auction: allShared.filter((a) => a.forAuction).length,
+  }), [allShared]);
 
-  function toggleId(id: string) {
+  function makeKey(a: SharedArtwork) { return `${a._srcCode}::${a.id}`; }
+
+  function toggleId(key: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
   }
 
   function toggleAll() {
-    if (selectedIds.size === srcArtworks.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(srcArtworks.map((a) => a.id)));
-    }
+    const keys = tabArtworks.map(makeKey);
+    const allChecked = keys.every((k) => selectedIds.has(k));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allChecked) keys.forEach((k) => next.delete(k));
+      else keys.forEach((k) => next.add(k));
+      return next;
+    });
   }
 
   async function importSelected() {
@@ -109,10 +115,17 @@ export function ArtworkManager({ code }: { code: string }) {
     setImporting(true);
     setImportMsg('');
     try {
-      // 전체 작품 목록에서 선택된 것만 추려 순서 유지
-      const toImport = srcArtworks.filter((a) => selectedIds.has(a.id));
-      const n = await copySelectedArtworks(toImport, code, artworks.length);
-      setImportMsg(`${n}점을 가져왔어요 ✓`);
+      // 선택된 작품을 원래 세션에서 찾아 배열로 구성
+      const toImport: Artwork[] = [];
+      for (const key of selectedIds) {
+        const [srcCode, artId] = key.split('::');
+        const a = allSessions?.[srcCode]?.artworks?.[artId];
+        if (a) toImport.push(a);
+      }
+      const destPlacement: Placement =
+        dest === 'common' ? { kind: 'common' } : { kind: 'branch', door: 0 };
+      const n = await copySelectedArtworks(toImport, code, artworks.length, destPlacement);
+      setImportMsg(`${n}점을 ${dest === 'common' ? '공통감상실' : '선택감상실'}로 가져왔어요 ✓`);
       setSelectedIds(new Set());
     } catch {
       setImportMsg('가져오기 실패 — 다시 시도해 주세요');
@@ -127,11 +140,10 @@ export function ArtworkManager({ code }: { code: string }) {
     setError('');
     const list = Array.from(files);
     for (let i = 0; i < list.length; i++) {
-      const f = list[i];
       setUploading(`${i + 1}/${list.length}`);
       try {
-        const url = await uploadImage(serverUrl.trim(), f);
-        const title = f.name.replace(/\.[^.]+$/, '');
+        const url = await uploadImage(serverUrl.trim(), list[i]);
+        const title = list[i].name.replace(/\.[^.]+$/, '');
         await addArtwork(code, { imageUrl: url, title, source: '', appraisedValue: 0, commentary: '', placement: { kind: 'branch', door: 0 }, forAuction: true }, artworks.length + i);
       } catch {
         setError('일부 업로드 실패 — 서버 주소·실행 상태 확인');
@@ -145,6 +157,9 @@ export function ArtworkManager({ code }: { code: string }) {
     await addArtwork(code, { imageUrl: urlInput.trim(), title: '새 작품', source: '', appraisedValue: 0, commentary: '', placement: { kind: 'branch', door: 0 }, forAuction: true }, artworks.length);
     setUrlInput('');
   }
+
+  const tabAllChecked = tabArtworks.length > 0 && tabArtworks.every((a) => selectedIds.has(makeKey(a)));
+  const totalSelected = selectedIds.size;
 
   return (
     <div className="w-full rounded-lg border p-5 text-left" style={{ borderColor: 'rgba(196,167,90,0.2)', background: 'rgba(28,18,10,0.6)' }}>
@@ -183,137 +198,129 @@ export function ArtworkManager({ code }: { code: string }) {
         {error && <div className="text-xs" style={{ color: 'rgba(224,160,160,0.9)' }}>{error}</div>}
         <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.5)' }}>업로드한 작품마다 아래에서 감정가·해설·배치를 입력하세요.</div>
 
-        {/* 다른 반에서 작품 가져오기 */}
-        <div className="mt-1 flex flex-col gap-2 border-t pt-3" style={{ borderColor: 'rgba(196,167,90,0.12)' }}>
-          <div className="text-[11px] font-medium" style={{ color: GOLD }}>다른 반에서 작품 가져오기</div>
+        {/* 다른 반 작품 가져오기 */}
+        <div className="mt-1 border-t pt-3" style={{ borderColor: 'rgba(196,167,90,0.12)' }}>
+          <button
+            onClick={() => { setShowImport((v) => !v); setImportMsg(''); }}
+            className="flex w-full items-center justify-between text-[11px] font-medium"
+            style={{ color: GOLD }}
+          >
+            <span>다른 반 작품 가져오기 {allShared.length > 0 ? `(${allShared.length}점 공유 중)` : ''}</span>
+            <span>{showImport ? '▲' : '▼'}</span>
+          </button>
 
-          {/* 반 선택 드롭다운 */}
-          {otherSessions.length === 0 ? (
-            <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.4)' }}>다른 세션이 없어요</div>
-          ) : (
-            <select
-              value={srcCode}
-              onChange={(e) => handleSelectSession(e.target.value)}
-              className={`${inputCls} w-full`}
-              style={{ ...inputStyle, background: 'rgba(28,18,10,0.8)' }}
-            >
-              <option value="">반 선택…</option>
-              {otherSessions.map((s) => (
-                <option key={s.code} value={s.code}>
-                  {s.className || '(이름 없는 반)'}
-                  {s.teacherName ? ` · ${s.teacherName}` : ''}
-                  {` — 공유 가능 ${s.sharedCount}점`}
-                  {` [${s.code}]`}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* 반 선택 후: 탭 + 작품 목록 */}
-          {srcCode && (
-            <div className="flex flex-col gap-2">
-              {/* 탭 */}
-              <div className="flex gap-1">
-                {(Object.keys(TAB_LABELS) as ImportTab[]).map((tab) => {
-                  const all = allSessions?.[srcCode]?.artworks
-                    ? Object.values(allSessions[srcCode].artworks!).filter((a) => !a.isPrivate)
-                    : [];
-                  const count =
-                    tab === 'common' ? all.filter((a) => a.placement?.kind === 'common').length
-                    : tab === 'branch' ? all.filter((a) => a.placement?.kind === 'branch').length
-                    : all.filter((a) => a.forAuction).length;
-                  const active = importTab === tab;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => { setImportTab(tab); setSelectedIds(new Set()); }}
-                      className="flex-1 rounded border py-1 text-xs"
-                      style={{
-                        borderColor: active ? GOLD : 'rgba(196,167,90,0.25)',
-                        background: active ? 'rgba(196,167,90,0.2)' : 'transparent',
-                        color: active ? '#ead9b8' : 'rgba(232,217,184,0.6)',
-                      }}
-                    >
-                      {TAB_LABELS[tab]} ({count})
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* 작품 목록 */}
-              {srcArtworks.length === 0 ? (
-                <div className="text-center text-[11px] py-3" style={{ color: 'rgba(232,217,184,0.4)' }}>
-                  이 카테고리에 작품이 없어요
+          {showImport && (
+            <div className="mt-2 flex flex-col gap-2">
+              {allShared.length === 0 ? (
+                <div className="py-3 text-center text-[11px]" style={{ color: 'rgba(232,217,184,0.4)' }}>
+                  공유된 작품이 없어요 (다른 반이 없거나 모두 비공개)
                 </div>
               ) : (
                 <>
-                  {/* 전체선택 */}
-                  <div className="flex items-center justify-between">
-                    <label className="flex cursor-pointer items-center gap-1.5 text-[11px]" style={{ color: 'rgba(232,217,184,0.7)' }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.size === srcArtworks.length && srcArtworks.length > 0}
-                        onChange={toggleAll}
-                      />
-                      전체 선택 ({srcArtworks.length}점)
-                    </label>
-                    {selectedIds.size > 0 && (
-                      <span className="text-[11px]" style={{ color: GOLD }}>{selectedIds.size}점 선택됨</span>
-                    )}
-                  </div>
-
-                  {/* 작품 카드 목록 */}
-                  <div className="flex max-h-64 flex-col gap-1.5 overflow-y-auto pr-1">
-                    {srcArtworks.map((a) => {
-                      const checked = selectedIds.has(a.id);
+                  {/* 분류 탭 */}
+                  <div className="flex gap-1">
+                    {(Object.keys(TAB_LABELS) as BrowseTab[]).map((tab) => {
+                      const active = browseTab === tab;
                       return (
-                        <label
-                          key={a.id}
-                          className="flex cursor-pointer items-center gap-2 rounded border p-2"
+                        <button
+                          key={tab}
+                          onClick={() => setBrowseTab(tab)}
+                          className="flex-1 rounded border py-1 text-xs"
                           style={{
-                            borderColor: checked ? 'rgba(196,167,90,0.5)' : 'rgba(196,167,90,0.15)',
-                            background: checked ? 'rgba(196,167,90,0.08)' : 'transparent',
+                            borderColor: active ? GOLD : 'rgba(196,167,90,0.25)',
+                            background: active ? 'rgba(196,167,90,0.2)' : 'transparent',
+                            color: active ? '#ead9b8' : 'rgba(232,217,184,0.55)',
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleId(a.id)}
-                            className="shrink-0"
-                          />
-                          {a.imageUrl && (
-                            <img src={a.imageUrl} alt={a.title} className="h-10 w-10 shrink-0 rounded object-cover" />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-xs font-medium" style={{ color: '#ead9b8' }}>{a.title || '(제목 없음)'}</div>
-                            <div className="text-[10px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
-                              {a.placement?.kind === 'common' ? '공통감상' : '선택감상'}
-                              {a.forAuction ? ' · 경매대상' : ''}
-                              {a.appraisedValue ? ` · ${a.appraisedValue.toLocaleString()}원` : ''}
-                            </div>
-                          </div>
-                        </label>
+                          {TAB_LABELS[tab]} ({counts[tab]})
+                        </button>
                       );
                     })}
                   </div>
+
+                  {/* 전체 선택 */}
+                  {tabArtworks.length > 0 && (
+                    <div className="flex items-center justify-between">
+                      <label className="flex cursor-pointer items-center gap-1.5 text-[11px]" style={{ color: 'rgba(232,217,184,0.7)' }}>
+                        <input type="checkbox" checked={tabAllChecked} onChange={toggleAll} />
+                        이 탭 전체 선택 ({tabArtworks.length}점)
+                      </label>
+                      {totalSelected > 0 && (
+                        <span className="text-[11px]" style={{ color: GOLD }}>총 {totalSelected}점 선택됨</span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 작품 목록 */}
+                  {tabArtworks.length === 0 ? (
+                    <div className="py-3 text-center text-[11px]" style={{ color: 'rgba(232,217,184,0.4)' }}>
+                      이 분류에 공유된 작품이 없어요
+                    </div>
+                  ) : (
+                    <div className="flex max-h-60 flex-col gap-1.5 overflow-y-auto pr-0.5">
+                      {tabArtworks.map((a) => {
+                        const key = makeKey(a);
+                        const checked = selectedIds.has(key);
+                        return (
+                          <label
+                            key={key}
+                            className="flex cursor-pointer items-center gap-2 rounded border p-2"
+                            style={{
+                              borderColor: checked ? 'rgba(196,167,90,0.5)' : 'rgba(196,167,90,0.15)',
+                              background: checked ? 'rgba(196,167,90,0.08)' : 'transparent',
+                            }}
+                          >
+                            <input type="checkbox" checked={checked} onChange={() => toggleId(key)} className="shrink-0" />
+                            {a.imageUrl && (
+                              <img src={a.imageUrl} alt={a.title} className="h-10 w-10 shrink-0 rounded object-cover" />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-xs font-medium" style={{ color: '#ead9b8' }}>
+                                {a.title || '(제목 없음)'}
+                              </div>
+                              <div className="text-[10px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
+                                {a._srcClassName || a._srcCode}
+                                {a.appraisedValue ? ` · ${a.appraisedValue.toLocaleString()}원` : ''}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* 가져올 위치 선택 + 가져오기 버튼 */}
+                  {totalSelected > 0 && (
+                    <div className="flex flex-col gap-2 rounded border p-3" style={{ borderColor: 'rgba(196,167,90,0.25)', background: 'rgba(196,167,90,0.06)' }}>
+                      <div className="text-[11px] font-medium" style={{ color: GOLD }}>
+                        선택한 {totalSelected}점을 어디에 넣을까요?
+                      </div>
+                      <div className="flex gap-3">
+                        {(['common', 'branch'] as DestType[]).map((d) => (
+                          <label key={d} className="flex cursor-pointer items-center gap-1.5 text-xs" style={{ color: dest === d ? '#ead9b8' : 'rgba(232,217,184,0.6)' }}>
+                            <input type="radio" name="dest" value={d} checked={dest === d} onChange={() => setDest(d)} />
+                            {d === 'common' ? '공통감상실 (수행평가)' : '선택감상실 (경매)'}
+                          </label>
+                        ))}
+                      </div>
+                      <button
+                        onClick={importSelected}
+                        disabled={importing}
+                        className="rounded-full border py-2 text-sm disabled:opacity-40"
+                        style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.15)', color: '#ead9b8' }}
+                      >
+                        {importing ? '가져오는 중…' : `${totalSelected}점 가져오기 →`}
+                      </button>
+                    </div>
+                  )}
+
+                  {importMsg && (
+                    <div className="text-[11px]" style={{ color: importMsg.includes('실패') ? 'rgba(224,160,160,0.9)' : '#8fce8f' }}>
+                      {importMsg}
+                    </div>
+                  )}
                 </>
               )}
-
-              {/* 가져오기 버튼 */}
-              <button
-                onClick={importSelected}
-                disabled={importing || selectedIds.size === 0}
-                className="rounded-full border py-2 text-sm disabled:opacity-40"
-                style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.13)', color: '#ead9b8' }}
-              >
-                {importing ? '가져오는 중…' : `선택한 ${selectedIds.size}점 가져오기`}
-              </button>
-            </div>
-          )}
-
-          {importMsg && (
-            <div className="text-[11px]" style={{ color: importMsg.includes('실패') ? 'rgba(224,160,160,0.9)' : '#8fce8f' }}>
-              {importMsg}
             </div>
           )}
         </div>

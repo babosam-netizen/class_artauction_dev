@@ -78,14 +78,16 @@ export async function copyArtworksFrom(
   return i;
 }
 
-/** 지정한 ID 목록의 작품만 복사. */
+/** 지정한 작품 배열을 복사. destPlacement가 있으면 배치를 덮어씀. */
 export async function copySelectedArtworks(
   artworks: Artwork[],
   toCode: string,
   startOrder: number,
+  destPlacement?: Placement,
 ): Promise<number> {
   let i = 0;
   for (const a of artworks) {
+    const placement = destPlacement ?? a.placement;
     await addArtwork(
       toCode,
       {
@@ -94,8 +96,10 @@ export async function copySelectedArtworks(
         source: a.source,
         appraisedValue: a.appraisedValue,
         commentary: a.commentary,
-        placement: a.placement,
-        forAuction: a.forAuction,
+        placement,
+        forAuction: destPlacement
+          ? destPlacement.kind === 'branch'
+          : a.forAuction,
       },
       startOrder + i,
     );
