@@ -22,7 +22,8 @@ export interface SessionMeta {
 export interface SessionState {
   phase: Phase;
   currentAuctionArtworkId?: string;
-  revealValues?: boolean; // 결과 발표: 교사가 감정가·순위 공개 토글
+  revealValues?: boolean; // 레거시 — revealedCount로 대체됨
+  revealedCount?: number; // 결과 발표: 공개된 모둠 수 (0=비공개, 증가할수록 한 장씩 공개)
 }
 
 /** 교사 편집 가능 콘텐츠 (학년군 기본값으로 시드, 가변) */

@@ -126,9 +126,14 @@ export async function saveContent(code: string, content: SessionContent): Promis
   await set(ref(db, paths.content(code)), content);
 }
 
-/** 결과 발표: 감정가·순위 공개 토글. */
+/** 결과 발표: 감정가·순위 공개 토글. (레거시) */
 export async function setReveal(code: string, reveal: boolean): Promise<void> {
   await update(ref(db, paths.state(code)), { revealValues: reveal });
+}
+
+/** 결과 발표: 공개된 작품 수 설정. null이면 대기 화면으로 리셋. */
+export async function setRevealCount(code: string, count: number | null): Promise<void> {
+  await update(ref(db, paths.state(code)), { revealedCount: count ?? null });
 }
 
 /** 공통작품감상실 작품 이름 표시 여부 설정. */

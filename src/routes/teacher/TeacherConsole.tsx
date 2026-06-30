@@ -11,6 +11,7 @@ import { openTv, openStudentQr } from '@/features/teacher/share';
 import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { createSession, getSessionMeta } from '@/features/session/api';
+import { copyArtworksFrom } from '@/features/artwork/api';
 import { loadRecent, addRecent, removeRecent } from '@/features/session/recent';
 import { tokens } from '@/theme';
 import type { GradeBand, SessionMeta, SessionState } from '@/models';
@@ -30,6 +31,7 @@ export function TeacherConsole() {
   const [codeInput, setCodeInput] = useState('');
   const [enterError, setEnterError] = useState('');
   const [recent, setRecent] = useState(loadRecent());
+  const [importCode, setImportCode] = useState('');
 
   const state = useRtdbValue<SessionState>(code ? paths.state(code) : null);
   const meta = useRtdbValue<SessionMeta>(code ? paths.meta(code) : null);
@@ -54,14 +56,23 @@ export function TeacherConsole() {
         className: className.trim(),
         teacherName: teacherName.trim(),
         gradeBand,
-        startingFunds: 1_000_000,
-        minIncrement: 50_000,
+        startingFunds: 10_000_000_000,
+        minIncrement: 100_000_000,
         timerSeconds: 10,
         commonGalleryCount: 2,
         branchDoorCount: 4,
         groupCount,
         groupSize,
       });
+      // 다른 반 코드를 입력했으면 그 반의 작품을 새 세션으로 복사
+      const from = importCode.trim().toUpperCase();
+      if (from && from !== newCode) {
+        try {
+          await copyArtworksFrom(from, newCode, 0);
+        } catch {
+          // 가져오기 실패해도 세션은 정상 생성 — 작품 관리에서 다시 시도 가능
+        }
+      }
       addRecent({
         code: newCode,
         gradeBand,
@@ -160,6 +171,23 @@ export function TeacherConsole() {
               <Row label="모둠당 인원">
                 <Stepper value={groupSize} min={1} max={15} onChange={setGroupSize} suffix="명" />
               </Row>
+            </div>
+
+            {/* 다른 반 작품 가져오기 (선택) */}
+            <div className="mt-3 border-t pt-3" style={{ borderColor: 'rgba(196,167,90,0.12)' }}>
+              <div className="mb-1.5 text-xs" style={{ color: 'rgba(232,217,184,0.7)' }}>
+                다른 반 작품 가져오기 <span style={{ color: 'rgba(232,217,184,0.4)' }}>(선택)</span>
+              </div>
+              <input
+                value={importCode}
+                onChange={(e) => setImportCode(e.target.value.toUpperCase())}
+                placeholder="다른 반 코드 (비워 두면 새로 시작)"
+                className="w-full rounded border bg-transparent px-3 py-2 text-center text-sm tracking-widest outline-none uppercase"
+                style={{ borderColor: BORDER, color: '#ead9b8' }}
+              />
+              <div className="mt-1 text-[11px]" style={{ color: 'rgba(232,217,184,0.45)' }}>
+                학년이 달라도 코드만 알면 작품(이미지·감정가·해설·배치)을 그대로 복사해요.
+              </div>
             </div>
 
             <button

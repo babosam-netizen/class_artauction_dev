@@ -1,6 +1,7 @@
 import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { participantIds } from './api';
+import { formatWon } from '@/utils/format';
 import type { Artwork, AuctionItem, Group, SessionMeta, SessionState } from '@/models';
 
 const C = {
@@ -52,7 +53,7 @@ export function TvAuctionView({ code }: { code: string }) {
           {sold ? (
             <>
               <div className="mt-6 text-lg" style={{ color: C.creamDim }}>낙찰가</div>
-              <div className="font-display text-7xl" style={{ color: C.gold }}>{(item?.askingPrice ?? 0).toLocaleString()}원</div>
+              <div className="font-display text-7xl" style={{ color: C.gold }}>{formatWon(item?.askingPrice ?? 0)}</div>
               <div className="mt-3 font-display text-4xl italic" style={{ color: C.green, animation: 'popIn 0.4s ease both' }}>🔨 {groupName(item!.winnerGroupId ?? '')} 낙찰!</div>
             </>
           ) : passed ? (
@@ -66,13 +67,13 @@ export function TvAuctionView({ code }: { code: string }) {
           ) : mode === 'manual' ? (
             <>
               <div className="mt-8 text-lg" style={{ color: C.creamDim }}>현재 호가</div>
-              <div className="font-display text-7xl" style={{ color: C.gold }}>{(item?.askingPrice ?? 0).toLocaleString()}원</div>
+              <div className="font-display text-7xl" style={{ color: C.gold }}>{formatWon(item?.askingPrice ?? 0)}</div>
               <div className="mt-3 text-2xl" style={{ color: C.cream }}>손을 들어 참여하세요 ✋</div>
             </>
           ) : (
             <>
               <div className="mt-6 text-lg" style={{ color: C.creamDim }}>현재 호가</div>
-              <div className="font-display text-7xl" style={{ color: C.gold }}>{(item?.askingPrice ?? 0).toLocaleString()}원</div>
+              <div className="font-display text-7xl" style={{ color: C.gold }}>{formatWon(item?.askingPrice ?? 0)}</div>
               <div className="mt-6 text-lg" style={{ color: C.creamDim }}>참여 {inIds.length}팀</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {allGroups.map((g) => {

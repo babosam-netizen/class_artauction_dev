@@ -3,6 +3,7 @@ import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { setParticipation, submitBid } from './api';
 import { setRepresentative } from '@/features/group/api';
+import { formatWon } from '@/utils/format';
 import type { Artwork, AuctionItem, Group, SessionMeta, SessionState } from '@/models';
 
 const C = {
@@ -52,7 +53,7 @@ export function StudentAuctionView({ code, studentNumber, groupId, artworks }: P
       <Wall>
         <div className="text-center">
           <div className="font-display text-3xl italic" style={{ color: C.cream }}>잠시 후 경매가 시작돼요</div>
-          <div className="mt-2 text-sm" style={{ color: C.creamDim }}>{myGroup?.name} · 남은 예산 {budget.toLocaleString()}원</div>
+          <div className="mt-2 text-sm" style={{ color: C.creamDim }}>{myGroup?.name} · 남은 예산 {formatWon(budget)}</div>
         </div>
       </Wall>
     );
@@ -74,8 +75,8 @@ export function StudentAuctionView({ code, studentNumber, groupId, artworks }: P
         <div className="flex w-1/2 flex-col justify-center">
           <div className="rounded-lg border p-3 text-center" style={{ borderColor: 'rgba(196,167,90,0.3)' }}>
             <div className="text-xs" style={{ color: C.creamDim }}>{mode === 'sealed' ? '입찰경매' : '현재 호가'}</div>
-            {mode !== 'sealed' && <div className="font-display text-4xl" style={{ color: C.gold }}>{price.toLocaleString()}원</div>}
-            <div className="mt-1 text-xs" style={{ color: C.creamDim }}>{myGroup?.name} · 남은 예산 {budget.toLocaleString()}원</div>
+            {mode !== 'sealed' && <div className="font-display text-4xl" style={{ color: C.gold }}>{formatWon(price)}</div>}
+            <div className="mt-1 text-xs" style={{ color: C.creamDim }}>{myGroup?.name} · 남은 예산 {formatWon(budget)}</div>
           </div>
 
           {item?.status === 'sold' ? (
@@ -99,7 +100,7 @@ export function StudentAuctionView({ code, studentNumber, groupId, artworks }: P
           ) : mode === 'sealed' ? (
             <div className="mt-5 flex flex-col gap-2">
               <div className="text-center text-sm" style={{ color: C.creamDim }}>
-                {myBid > 0 ? `제출한 입찰: ${myBid.toLocaleString()}원` : '얼마에 사겠어요?'}
+                {myBid > 0 ? `제출한 입찰: ${formatWon(myBid)}` : '얼마에 사겠어요?'}
               </div>
               <input value={bidInput} onChange={(e) => setBidInput(e.target.value)} placeholder="입찰 금액(원)" inputMode="numeric" className="rounded border bg-transparent px-3 py-3 text-center text-lg outline-none" style={{ borderColor: 'rgba(196,167,90,0.4)', color: C.cream }} />
               <button

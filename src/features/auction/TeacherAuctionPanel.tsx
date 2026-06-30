@@ -4,6 +4,7 @@ import { paths } from '@/firebase/paths';
 import { initAuction, presentArtwork, raisePrice, award, passItem, reauction, participantIds, highestBid } from './api';
 import { setAuctionMode } from '@/features/session/api';
 import { sortByOrder } from '@/features/artwork/api';
+import { formatWon } from '@/utils/format';
 import type { Artwork, AuctionItem, AuctionMode, Group, SessionMeta, SessionState } from '@/models';
 
 const GOLD = '#c4975a';
@@ -27,6 +28,7 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
   const groupsMap = useRtdbValue<Record<string, Group>>(paths.groups(code)) ?? {};
   const [manualPrice, setManualPrice] = useState('');
   const [manualGroup, setManualGroup] = useState('');
+  const [startPriceInput, setStartPriceInput] = useState('');
 
   const mode = meta.auctionMode ?? 'live';
   const currentId = state?.currentAuctionArtworkId;
@@ -41,7 +43,7 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
   const liveOngoing = current && current.status === 'live';
   const soldCount = items.filter((i) => i.status === 'sold').length;
   const remainCount = items.filter((i) => i.status === 'pending' || i.status === 'passed').length;
-  const startFor = mode === 'sealed' ? 0 : meta.minIncrement;
+  const startFor = mode === 'sealed' ? 0 : (Number(startPriceInput) || 0);
 
   return (
     <div className="w-full rounded-lg border p-5 text-left" style={{ borderColor: 'rgba(196,167,90,0.2)', background: 'rgba(28,18,10,0.6)' }}>
@@ -76,11 +78,11 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
         <div className="mb-4 rounded border p-3" style={{ borderColor: 'rgba(196,167,90,0.3)' }}>
           <div className="flex items-baseline justify-between">
             <div className="font-display text-lg italic" style={{ color: '#ead9b8' }}>{title(current.artworkId)}</div>
-            {mode !== 'sealed' && <div className="font-display text-xl" style={{ color: GOLD }}>{current.askingPrice.toLocaleString()}원</div>}
+            {mode !== 'sealed' && <div className="font-display text-xl" style={{ color: GOLD }}>{formatWon(current.askingPrice)}</div>}
           </div>
 
           {current.status === 'sold' ? (
-            <div className="mt-1 text-sm" style={{ color: GREEN }}>🔨 {groupName(current.winnerGroupId ?? '')} 낙찰 ({current.askingPrice.toLocaleString()}원)</div>
+            <div className="mt-1 text-sm" style={{ color: GREEN }}>🔨 {groupName(current.winnerGroupId ?? '')} 낙찰 ({formatWon(current.askingPrice)})</div>
           ) : current.status === 'passed' ? (
             <>
               <div className="mt-1 text-sm" style={{ color: 'rgba(232,217,184,0.6)' }}>유찰</div>
@@ -96,7 +98,9 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
                 })}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button onClick={() => raisePrice(code, current.artworkId, meta.minIncrement)} className="rounded-full border px-4 py-1.5 text-xs" style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.13)', color: '#ead9b8' }}>호가 올리기 +{meta.minIncrement.toLocaleString()}</button>
+                {([100_000_000, 500_000_000, 1_000_000_000] as const).map((inc) => (
+                  <button key={inc} onClick={() => raisePrice(code, current.artworkId, inc)} className="rounded-full border px-4 py-1.5 text-xs" style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.13)', color: '#ead9b8' }}>+{formatWon(inc)}</button>
+                ))}
                 {inIds.length === 1 ? (
                   <button onClick={() => award(code, current.artworkId, inIds[0], current.askingPrice)} className="rounded-full border px-4 py-1.5 text-xs" style={{ borderColor: GREEN, background: 'rgba(143,206,143,0.18)', color: '#ead9b8' }}>🔨 {groupName(inIds[0])} 낙찰</button>
                 ) : inIds.length === 0 ? (
@@ -113,14 +117,14 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
                 {Object.entries(current.bids ?? {}).sort((a, b) => b[1] - a[1]).map(([g, amt], i) => (
                   <div key={g} className="flex justify-between rounded px-2 py-1 text-sm" style={{ background: i === 0 ? 'rgba(143,206,143,0.15)' : 'rgba(196,167,90,0.06)', color: '#ead9b8' }}>
                     <span>{i === 0 ? '🏆 ' : ''}{groupName(g)}</span>
-                    <span style={{ color: i === 0 ? GREEN : GOLD }}>{amt.toLocaleString()}원</span>
+                    <span style={{ color: i === 0 ? GREEN : GOLD }}>{formatWon(amt)}</span>
                   </div>
                 ))}
                 {!current.bids && <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.4)' }}>아직 입찰이 없어요</div>}
               </div>
               <div className="mt-3 flex gap-2">
                 {top ? (
-                  <button onClick={() => award(code, current.artworkId, top.groupId, top.amount)} className="rounded-full border px-4 py-1.5 text-xs" style={{ borderColor: GREEN, background: 'rgba(143,206,143,0.18)', color: '#ead9b8' }}>🔨 최고가 낙찰 ({groupName(top.groupId)} · {top.amount.toLocaleString()}원)</button>
+                  <button onClick={() => award(code, current.artworkId, top.groupId, top.amount)} className="rounded-full border px-4 py-1.5 text-xs" style={{ borderColor: GREEN, background: 'rgba(143,206,143,0.18)', color: '#ead9b8' }}>🔨 최고가 낙찰 ({groupName(top.groupId)} · {formatWon(top.amount)})</button>
                 ) : (
                   <button onClick={() => passItem(code, current.artworkId)} className="rounded-full border px-4 py-1.5 text-xs" style={{ borderColor: 'rgba(196,167,90,0.4)', color: '#ead9b8' }}>유찰 처리</button>
                 )}
@@ -151,7 +155,32 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
         </div>
       )}
 
-      {items.length > 0 && !liveOngoing && (
+      {items.length > 0 && !liveOngoing && mode !== 'sealed' && (
+        <div className="mb-2">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-xs whitespace-nowrap" style={{ color: 'rgba(232,217,184,0.7)' }}>시작 호가</span>
+            <input
+              value={startPriceInput}
+              onChange={(e) => setStartPriceInput(e.target.value)}
+              placeholder="0 (0원 시작)"
+              inputMode="numeric"
+              className="min-w-0 flex-1 rounded border bg-transparent px-2 py-1 text-xs outline-none"
+              style={{ borderColor: 'rgba(196,167,90,0.4)', color: '#ead9b8' }}
+            />
+            {startPriceInput ? (
+              <span className="text-xs whitespace-nowrap font-medium" style={{ color: GOLD }}>{formatWon(Number(startPriceInput))}</span>
+            ) : (
+              <span className="text-xs whitespace-nowrap" style={{ color: 'rgba(232,217,184,0.35)' }}>0원</span>
+            )}
+          </div>
+          <div className="flex gap-1">
+            {[1, 5, 10, 30, 50].map((eok) => (
+              <button key={eok} onClick={() => setStartPriceInput(String(eok * 100_000_000))} className="flex-1 rounded border py-1 text-[11px]" style={{ borderColor: 'rgba(196,167,90,0.3)', color: 'rgba(232,217,184,0.7)' }}>{eok}억</button>
+            ))}
+          </div>
+        </div>
+      )}
+      {items.length > 0 && !liveOngoing && mode === 'sealed' && (
         <div className="mb-2 text-xs" style={{ color: 'rgba(232,217,184,0.7)' }}>
           아래 목록에서 작품을 <b style={{ color: GOLD }}>올리기</b> 하면 경매가 시작됩니다.
         </div>
@@ -163,7 +192,7 @@ export function TeacherAuctionPanel({ code, meta }: Props) {
             <span style={{ color: '#ead9b8' }}>
               {title(it.artworkId)}{' '}
               <span style={{ color: 'rgba(196,167,90,0.6)' }}>
-                {it.status === 'sold' ? `· 낙찰 ${it.askingPrice.toLocaleString()}원` : it.status === 'passed' ? '· 유찰' : it.status === 'live' ? '· 진행 중' : ''}
+                {it.status === 'sold' ? `· 낙찰 ${formatWon(it.askingPrice)}` : it.status === 'passed' ? '· 유찰' : it.status === 'live' ? '· 진행 중' : ''}
               </span>
             </span>
             {(it.status === 'pending' || it.status === 'passed') && !liveOngoing && (

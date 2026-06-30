@@ -5,6 +5,7 @@ import { PHASE_LABELS } from '@/features/session/api';
 import { removeStudent, resetClass } from '@/features/teacher/admin';
 import { sortByOrder } from '@/features/artwork/api';
 import { DEFAULT_PROMPTS } from '@/content/prompts';
+import { formatWon } from '@/utils/format';
 import type {
   Appreciation,
   Artwork,
@@ -183,11 +184,11 @@ export function Dashboard({ code, gradeBand }: { code: string; gradeBand: GradeB
               <span className="font-display text-xl italic" style={{ color: '#ead9b8' }}>
                 {g.name} <span className="text-xs not-italic" style={{ color: 'rgba(232,217,184,0.5)' }}>· {members.length}명</span>
               </span>
-              <span className="text-xs" style={{ color: GOLD }}>잔여 {(g.remainingBudget ?? 0).toLocaleString()}원</span>
+              <span className="text-xs" style={{ color: GOLD }}>잔여 {formatWon(g.remainingBudget ?? 0)}</span>
             </div>
             {/* 경매장 모둠 활동 */}
             <div className="mb-2 text-[11px]" style={{ color: 'rgba(232,217,184,0.6)' }}>
-              경매 · 낙찰 {wonTitles.length}점 {wonTitles.length > 0 && `(${wonTitles.join(', ')})`} · 지출 {spent.toLocaleString()}원
+              경매 · 낙찰 {wonTitles.length}점 {wonTitles.length > 0 && `(${wonTitles.join(', ')})`} · 지출 {formatWon(spent)}
               {g.repStudentNumber && ` · 대표 ${g.repStudentNumber}번`}
             </div>
             {members.length === 0 ? (
