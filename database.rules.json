@@ -9,6 +9,7 @@
       ".write": "auth != null && !data.exists()"
     },
     "sessions": {
+      ".read": "auth != null",
       "$code": {
         ".read": "auth != null",
         ".write": "auth != null && (!data.exists() ? newData.child('meta/teacherUid').val() === auth.uid : data.child('meta/teacherUid').val() === auth.uid)",
