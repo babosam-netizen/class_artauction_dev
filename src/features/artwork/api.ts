@@ -77,3 +77,29 @@ export async function copyArtworksFrom(
   }
   return i;
 }
+
+/** 지정한 ID 목록의 작품만 복사. */
+export async function copySelectedArtworks(
+  artworks: Artwork[],
+  toCode: string,
+  startOrder: number,
+): Promise<number> {
+  let i = 0;
+  for (const a of artworks) {
+    await addArtwork(
+      toCode,
+      {
+        imageUrl: a.imageUrl,
+        title: a.title,
+        source: a.source,
+        appraisedValue: a.appraisedValue,
+        commentary: a.commentary,
+        placement: a.placement,
+        forAuction: a.forAuction,
+      },
+      startOrder + i,
+    );
+    i++;
+  }
+  return i;
+}
