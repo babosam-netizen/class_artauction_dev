@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { addArtwork, removeArtwork, updateArtwork, sortByOrder, copyArtworksFrom } from '@/features/artwork/api';
 import { setShowCommonTitles } from '@/features/session/api';
 import { uploadImage, loadImageServerUrl, saveImageServerUrl } from '@/features/artwork/upload';
 import type { Artwork, Placement, SessionMeta } from '@/models';
+
+interface RawSessionForImport {
+  meta?: SessionMeta;
+  artworks?: Record<string, { id: string }>;
+}
 
 const GOLD = '#c4975a';
 const BORDER = 'rgba(196,167,90,0.4)';
@@ -23,6 +28,23 @@ export function ArtworkManager({ code }: { code: string }) {
   const [srcCode, setSrcCode] = useState('');
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+
+  // 모든 세션 목록 (다른 반 가져오기용)
+  const allSessions = useRtdbValue<Record<string, RawSessionForImport>>(paths.sessionsRoot());
+  const otherSessions = useMemo(() => {
+    if (!allSessions) return [];
+    return Object.entries(allSessions)
+      .filter(([c]) => c !== code)
+      .map(([c, s]) => ({
+        code: c,
+        className: s.meta?.className,
+        teacherName: s.meta?.teacherName,
+        gradeBand: s.meta?.gradeBand,
+        artworkCount: s.artworks ? Object.keys(s.artworks).length : 0,
+        createdAt: s.meta?.createdAt ?? 0,
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }, [allSessions, code]);
 
   async function importFrom() {
     const from = srcCode.trim().toUpperCase();
@@ -153,25 +175,45 @@ export function ArtworkManager({ code }: { code: string }) {
         </div>
 
         {/* 다른 반에서 작품 가져오기 */}
-        <div className="mt-1 flex gap-2 border-t pt-2" style={{ borderColor: 'rgba(196,167,90,0.12)' }}>
-          <input
-            value={srcCode}
-            onChange={(e) => setSrcCode(e.target.value)}
-            placeholder="다른 반 코드"
-            className={`${inputCls} flex-1`}
-            style={inputStyle}
-          />
-          <button
-            onClick={importFrom}
-            disabled={importing || !srcCode.trim()}
-            className="rounded border px-3 text-sm disabled:opacity-40"
-            style={{ borderColor: GOLD, color: '#ead9b8' }}
-          >
-            {importing ? '가져오는 중…' : '작품 가져오기'}
-          </button>
-        </div>
-        <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
-          학년이 달라도(5·6학년 → 3·4학년 등) 코드만 알면 가져올 수 있어요.
+        <div className="mt-1 flex flex-col gap-2 border-t pt-2" style={{ borderColor: 'rgba(196,167,90,0.12)' }}>
+          <div className="text-[11px] font-medium" style={{ color: GOLD }}>다른 반에서 작품 가져오기</div>
+          {otherSessions.length === 0 ? (
+            <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.4)' }}>
+              다른 세션이 없어요
+            </div>
+          ) : (
+            <select
+              value={srcCode}
+              onChange={(e) => { setSrcCode(e.target.value); setImportMsg(''); }}
+              className={`${inputCls} w-full`}
+              style={{ ...inputStyle, background: 'rgba(28,18,10,0.8)' }}
+            >
+              <option value="">반 선택…</option>
+              {otherSessions.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.className || '(이름 없는 반)'}
+                  {s.teacherName ? ` · ${s.teacherName}` : ''}
+                  {` — 작품 ${s.artworkCount}점`}
+                  {` [${s.code}]`}
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={importFrom}
+              disabled={importing || !srcCode.trim()}
+              className="rounded border px-3 py-1.5 text-sm disabled:opacity-40"
+              style={{ borderColor: GOLD, color: '#ead9b8' }}
+            >
+              {importing ? '가져오는 중…' : '작품 가져오기'}
+            </button>
+            {srcCode && (
+              <span className="self-center text-[11px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
+                선택된 코드: <b style={{ color: GOLD }}>{srcCode}</b>
+              </span>
+            )}
+          </div>
         </div>
         {importMsg && <div className="text-[11px]" style={{ color: 'rgba(232,217,184,0.7)' }}>{importMsg}</div>}
       </div>
