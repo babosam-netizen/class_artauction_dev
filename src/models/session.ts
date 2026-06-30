@@ -3,6 +3,8 @@ import type { AuctionMode, GradeBand, GroupAssignMode, Phase, Timestamp, Won } f
 export interface SessionMeta {
   code: string;
   teacherUid: string;
+  className?: string; // 반 이름 (예: 6학년 9반)
+  teacherName?: string; // 교사 이름
   gradeBand: GradeBand;
   startingFunds: Won;
   minIncrement: Won;

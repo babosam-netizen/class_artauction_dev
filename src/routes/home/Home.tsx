@@ -42,6 +42,14 @@ export function Home() {
           {card('💻', '교사 입장', '세션 생성 · 진행 · 현황 · 데모', () => nav('/teacher'), true)}
           {card('📱', '학생 입장', '코드로 미술관에 들어가기', () => nav('/play'))}
         </div>
+
+        <button
+          onClick={() => nav('/admin')}
+          className="mt-8 text-xs"
+          style={{ color: 'rgba(232,217,184,0.4)' }}
+        >
+          🛡 슈퍼어드민
+        </button>
       </div>
     </div>
   );

@@ -47,6 +47,8 @@ export function prevPhase(p: Phase): Phase {
 }
 
 export interface CreateSessionParams {
+  className: string;
+  teacherName: string;
   gradeBand: GradeBand;
   startingFunds: number;
   minIncrement: number;
@@ -66,6 +68,8 @@ export async function createSession(params: CreateSessionParams): Promise<string
   const meta: SessionMeta = {
     code,
     teacherUid: cred.user.uid,
+    className: params.className.trim(),
+    teacherName: params.teacherName.trim(),
     gradeBand: params.gradeBand,
     startingFunds: params.startingFunds,
     minIncrement: params.minIncrement,
@@ -104,6 +108,12 @@ export async function createSession(params: CreateSessionParams): Promise<string
 export async function sessionExists(code: string): Promise<boolean> {
   const snap = await get(ref(db, paths.meta(code)));
   return snap.exists();
+}
+
+/** 세션 메타 1회 조회 (코드 입장 시 반 이름 등 표시용). 없으면 null. */
+export async function getSessionMeta(code: string): Promise<SessionMeta | null> {
+  const snap = await get(ref(db, paths.meta(code)));
+  return snap.exists() ? (snap.val() as SessionMeta) : null;
 }
 
 /** 교사 단계 전환 (source of truth). */

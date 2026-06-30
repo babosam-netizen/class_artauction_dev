@@ -1,6 +1,7 @@
 // RTDB 경로 헬퍼 — 오타 방지를 위한 단일 소스 (PRD §6 트리 레이아웃)
 
 export const paths = {
+  sessionsRoot: () => 'sessions',
   session: (code: string) => `sessions/${code}`,
   meta: (code: string) => `sessions/${code}/meta`,
   state: (code: string) => `sessions/${code}/state`,

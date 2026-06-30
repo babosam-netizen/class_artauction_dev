@@ -4,6 +4,10 @@
       ".read": "auth != null",
       ".write": "auth != null && !data.exists()"
     },
+    "adminAuth": {
+      ".read": "auth != null",
+      ".write": "auth != null && !data.exists()"
+    },
     "sessions": {
       "$code": {
         ".read": "auth != null",

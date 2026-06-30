@@ -4,6 +4,8 @@ import type { GradeBand } from '@/models';
 export interface RecentSession {
   code: string;
   gradeBand: GradeBand;
+  className?: string;
+  teacherName?: string;
   createdAt: number;
 }
 

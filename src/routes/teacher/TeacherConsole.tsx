@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArtworkManager } from './ArtworkManager';
 import { ContentEditor } from './ContentEditor';
 import { GroupSettings } from './GroupSettings';
@@ -10,7 +10,7 @@ import { Dashboard } from '@/features/teacher/Dashboard';
 import { openTv, openStudentQr } from '@/features/teacher/share';
 import { useRtdbValue } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
-import { createSession, sessionExists } from '@/features/session/api';
+import { createSession, getSessionMeta } from '@/features/session/api';
 import { loadRecent, addRecent, removeRecent } from '@/features/session/recent';
 import { tokens } from '@/theme';
 import type { GradeBand, SessionMeta, SessionState } from '@/models';
@@ -21,6 +21,8 @@ const BORDER = 'rgba(196,167,90,0.4)';
 export function TeacherConsole() {
   const navigate = useNavigate();
   const [code, setCode] = useState<string | null>(null);
+  const [className, setClassName] = useState('');
+  const [teacherName, setTeacherName] = useState('');
   const [gradeBand, setGradeBand] = useState<GradeBand>('3-4');
   const [groupCount, setGroupCount] = useState(4);
   const [groupSize, setGroupSize] = useState(4);
@@ -32,10 +34,25 @@ export function TeacherConsole() {
   const state = useRtdbValue<SessionState>(code ? paths.state(code) : null);
   const meta = useRtdbValue<SessionMeta>(code ? paths.meta(code) : null);
 
+  const [searchParams] = useSearchParams();
+  // 슈퍼어드민/공유 링크에서 ?code=XXX 로 들어오면 해당 세션을 바로 연다.
+  useEffect(() => {
+    const c = searchParams.get('code');
+    if (c && !code) enterCode(c);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleCreate() {
+    if (!className.trim()) {
+      setEnterError('반 이름을 입력해 주세요');
+      return;
+    }
     setBusy(true);
+    setEnterError('');
     try {
       const newCode = await createSession({
+        className: className.trim(),
+        teacherName: teacherName.trim(),
         gradeBand,
         startingFunds: 1_000_000,
         minIncrement: 50_000,
@@ -45,7 +62,14 @@ export function TeacherConsole() {
         groupCount,
         groupSize,
       });
-      addRecent({ code: newCode, gradeBand, createdAt: Date.now() });
+      addRecent({
+        code: newCode,
+        gradeBand,
+        className: className.trim(),
+        teacherName: teacherName.trim(),
+        createdAt: Date.now(),
+      });
+      setRecent(loadRecent());
       setCode(newCode);
     } finally {
       setBusy(false);
@@ -58,7 +82,16 @@ export function TeacherConsole() {
     setBusy(true);
     setEnterError('');
     try {
-      if (await sessionExists(up)) {
+      const m = await getSessionMeta(up);
+      if (m) {
+        addRecent({
+          code: up,
+          gradeBand: m.gradeBand,
+          className: m.className,
+          teacherName: m.teacherName,
+          createdAt: m.createdAt ?? Date.now(),
+        });
+        setRecent(loadRecent());
         setCode(up);
       } else {
         setEnterError(`'${up}' 세션을 찾을 수 없어요`);
@@ -84,6 +117,23 @@ export function TeacherConsole() {
           {/* 새 세션 */}
           <div className="rounded-xl border p-5" style={{ borderColor: 'rgba(196,167,90,0.25)', background: 'rgba(28,18,10,0.5)' }}>
             <div className="mb-3 text-sm font-semibold" style={{ color: GOLD }}>새 세션 만들기</div>
+
+            <div className="mb-3 flex flex-col gap-2">
+              <input
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                placeholder="반 이름 (예: 6학년 9반)"
+                className="w-full rounded border bg-transparent px-4 py-2 text-sm outline-none"
+                style={{ borderColor: BORDER, color: '#ead9b8' }}
+              />
+              <input
+                value={teacherName}
+                onChange={(e) => setTeacherName(e.target.value)}
+                placeholder="교사 이름 (선택)"
+                className="w-full rounded border bg-transparent px-4 py-2 text-sm outline-none"
+                style={{ borderColor: BORDER, color: '#ead9b8' }}
+              />
+            </div>
 
             <div className="flex flex-col gap-3">
               <Row label="학년군">
@@ -114,11 +164,11 @@ export function TeacherConsole() {
 
             <button
               onClick={handleCreate}
-              disabled={busy}
+              disabled={busy || !className.trim()}
               className="mt-4 w-full rounded-full border py-2.5 text-sm disabled:opacity-50"
               style={{ borderColor: GOLD, background: 'rgba(196,167,90,0.15)', color: '#ead9b8' }}
             >
-              {busy ? '생성 중…' : `＋ 세션 생성 (최대 ${groupCount * groupSize}명)`}
+              {busy ? '생성 중…' : `＋ 반 만들고 입장 (코드 자동 생성 · 최대 ${groupCount * groupSize}명)`}
             </button>
           </div>
 
@@ -149,19 +199,25 @@ export function TeacherConsole() {
           {/* 최근 세션 */}
           {recent.length > 0 && (
             <div className="rounded-xl border p-5" style={{ borderColor: 'rgba(196,167,90,0.25)', background: 'rgba(28,18,10,0.5)' }}>
-              <div className="mb-3 text-sm font-semibold" style={{ color: GOLD }}>최근 세션 (이 기기)</div>
+              <div className="mb-3 text-sm font-semibold" style={{ color: GOLD }}>이 기기에서 들어갔던 반</div>
               <div className="flex flex-col gap-2">
                 {recent.map((r) => (
                   <div key={r.code} className="flex items-center gap-2">
                     <button
                       onClick={() => enterCode(r.code)}
-                      className="flex flex-1 items-center justify-between rounded-lg border px-4 py-2 text-left text-sm"
+                      className="flex flex-1 items-center justify-between gap-3 rounded-lg border px-4 py-2 text-left text-sm"
                       style={{ borderColor: 'rgba(196,167,90,0.2)', color: '#ead9b8' }}
                     >
-                      <span className="font-display text-lg tracking-widest" style={{ color: GOLD }}>{r.code}</span>
-                      <span className="text-xs" style={{ color: 'rgba(232,217,184,0.6)' }}>
-                        {r.gradeBand === '3-4' ? '3~4학년' : '5~6학년'} · {new Date(r.createdAt).toLocaleDateString()}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium" style={{ color: '#ead9b8' }}>
+                          {r.className || '(이름 없는 반)'}
+                          {r.teacherName ? <span className="ml-1 text-xs" style={{ color: 'rgba(232,217,184,0.55)' }}>· {r.teacherName}</span> : null}
+                        </span>
+                        <span className="block text-xs" style={{ color: 'rgba(232,217,184,0.6)' }}>
+                          {r.gradeBand === '3-4' ? '3~4학년' : '5~6학년'} · {new Date(r.createdAt).toLocaleDateString()}
+                        </span>
                       </span>
+                      <span className="font-display text-lg tracking-widest" style={{ color: GOLD }}>{r.code}</span>
                     </button>
                     <button
                       onClick={() => { removeRecent(r.code); setRecent(loadRecent()); }}
@@ -201,7 +257,12 @@ export function TeacherConsole() {
         {/* 헤더 */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-baseline gap-3">
-            <span className="font-display text-2xl italic">교사 콘솔</span>
+            <span className="font-display text-2xl italic">
+              {meta?.className || '교사 콘솔'}
+            </span>
+            {meta?.teacherName && (
+              <span className="text-xs text-cream-dim">{meta.teacherName} 선생님</span>
+            )}
             <span className="text-xs text-cream-dim">입장 코드</span>
             <span className="font-display text-3xl tracking-[0.15em]" style={{ color: GOLD }}>{code}</span>
           </div>

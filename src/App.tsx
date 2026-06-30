@@ -5,6 +5,8 @@ import { StudentPlay } from './routes/play/StudentPlay';
 import { TvScreen } from './routes/tv/TvScreen';
 import { DemoView } from './routes/demo/DemoView';
 import { TeacherGate } from './features/teacher-auth/TeacherGate';
+import { AdminGate } from './features/admin/AdminGate';
+import { AdminConsole } from './routes/admin/AdminConsole';
 import { MuseumShell } from './components/MuseumShell';
 import { useAuthReady } from './firebase/hooks';
 
@@ -25,6 +27,14 @@ export function App() {
             <TeacherGate>
               <TeacherConsole />
             </TeacherGate>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminGate>
+              <AdminConsole />
+            </AdminGate>
           }
         />
         <Route path="/play" element={<StudentPlay />} />
