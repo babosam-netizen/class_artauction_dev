@@ -14,7 +14,7 @@ services:
       - UPLOAD_DIR=/data
       # 업로드 허용 출처(콤마 구분). 새 앱을 붙이면 그 도메인을 여기 추가하고
       # `docker compose up -d`로 재시작하면 됨(이미지 재빌드 불필요).
-      - ALLOWED_ORIGINS=https://art-auction.pages.dev,https://*.art-auction.pages.dev,https://babosam.net,https://*.babosam.net,http://localhost:5173,http://localhost:4173
+      - ALLOWED_ORIGINS=https://art-auction.pages.dev,https://*.art-auction.pages.dev,https://today-mission.pages.dev,https://*.today-mission.pages.dev,https://babosam.net,https://*.babosam.net,http://localhost:5173,http://localhost:4173
       # 요청 제한(선택): IP당 창당 최대 횟수 / 창 길이(ms)
       - RL_MAX=100
       - RL_WINDOW_MS=600000
