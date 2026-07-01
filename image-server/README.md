@@ -51,4 +51,8 @@ cloudflared tunnel --url http://localhost:8787
 - 영구적으로 쓰려면: Cloudflare에 도메인을 연결해 **명명된 터널(named tunnel)**로 고정 주소를 만들면 됩니다
   (도메인 필요). 그때 `UPLOAD_DIR`을 NAS 폴더로 두면 자료가 NAS에 영구 보관됩니다.
 - 맥스튜디오는 수업 동안 켜져 있어야 합니다(절전 해제 권장).
-- 업로드는 20MB·이미지 파일만 허용. CORS는 모든 출처 허용(프로토타입).
+- 업로드는 20MB·이미지 파일만 허용. 이미지 **조회(GET)**는 어디서나 가능.
+- **업로드 보안**: 허용된 앱 도메인(Origin)에서 온 요청만 받고, IP당 요청 횟수를 제한한다.
+  - 허용 도메인·제한값은 `docker-compose.yml`의 `ALLOWED_ORIGINS` / `RL_MAX` / `RL_WINDOW_MS`로 설정.
+  - **새 앱을 붙일 때**: 그 앱 도메인을 `ALLOWED_ORIGINS`에 콤마로 추가 → `docker compose up -d`로 재시작(이미지 재빌드 불필요).
+  - 참고: Origin 검사는 브라우저發 무단 업로드·자동 도배를 막는 교실용 수준이다(작정한 curl 위조까진 못 막음).

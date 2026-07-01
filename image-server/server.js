@@ -24,6 +24,68 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 // 앱 이름(폴더명) 검증: 경로 탈출(../) 방지 + 예측 가능한 폴더명만 허용
 const APP_NAME = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
+// ── 업로드 보안 ────────────────────────────────────────────────────────────
+// 1) 허용 출처(Origin): 이 도메인의 브라우저에서 온 업로드만 받는다.
+//    새 앱을 붙이면 그 앱 도메인을 ALLOWED_ORIGINS(콤마 구분)에 추가한다.
+//    와일드카드 한 단계 지원: https://*.pages.dev
+const DEFAULT_ORIGINS = [
+  'https://art-auction.pages.dev',
+  'https://*.art-auction.pages.dev', // Cloudflare Pages 미리보기 배포
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+  : DEFAULT_ORIGINS;
+
+function originAllowed(origin) {
+  if (!origin) return false; // 브라우저가 아닌 요청(curl 등)은 Origin이 없음 → 거부
+  return ALLOWED_ORIGINS.some((rule) => {
+    if (rule === origin) return true;
+    if (rule.includes('*')) {
+      const re = new RegExp(
+        '^' + rule.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^.]+') + '$',
+      );
+      return re.test(origin);
+    }
+    return false;
+  });
+}
+
+function requireAllowedOrigin(req, res, next) {
+  if (originAllowed(req.headers.origin)) return next();
+  console.warn(`⛔ 업로드 거부(출처): ${req.headers.origin || '(Origin 없음)'} ip=${req.ip}`);
+  return res.status(403).json({ error: '허용되지 않은 출처에서의 업로드입니다' });
+}
+
+// 2) IP당 요청 제한(슬라이딩 윈도우, 메모리). 도배·디스크 채우기 방지.
+const RL_WINDOW_MS = Number(process.env.RL_WINDOW_MS) || 10 * 60 * 1000; // 10분
+const RL_MAX = Number(process.env.RL_MAX) || 100; // 창당 업로드 최대 횟수
+const rlHits = new Map(); // ip -> timestamp[]
+
+function rateLimit(req, res, next) {
+  const now = Date.now();
+  const ip = req.ip || 'unknown';
+  const recent = (rlHits.get(ip) || []).filter((t) => now - t < RL_WINDOW_MS);
+  if (recent.length >= RL_MAX) {
+    console.warn(`⛔ 업로드 거부(횟수초과): ip=${ip}`);
+    return res.status(429).json({ error: '너무 많이 올렸어요. 잠시 후 다시 시도해 주세요.' });
+  }
+  recent.push(now);
+  rlHits.set(ip, recent);
+  next();
+}
+
+// 오래된 IP 기록 주기적 정리(메모리 누수 방지)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, arr] of rlHits) {
+    const keep = arr.filter((t) => now - t < RL_WINDOW_MS);
+    if (keep.length) rlHits.set(ip, keep);
+    else rlHits.delete(ip);
+  }
+}, RL_WINDOW_MS).unref();
+
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
     const app = req.params.app;
@@ -46,7 +108,8 @@ const upload = multer({
 });
 
 const app = express();
-app.use(cors()); // 배포된 앱(다른 출처)에서 호출 허용
+app.set('trust proxy', true); // 터널/프록시 뒤의 실제 클라이언트 IP 파악(X-Forwarded-For)
+app.use(cors()); // 이미지 조회 등은 어디서나. 업로드는 requireAllowedOrigin으로 별도 제한
 
 app.get('/health', (_req, res) => res.json({ ok: true, dir: UPLOAD_DIR }));
 
@@ -58,8 +121,9 @@ function handleUpload(req, res) {
   res.json({ path: rel });
 }
 
-app.post('/upload', upload.single('image'), handleUpload); // 앱 구분 없음(하위호환)
-app.post('/upload/:app', upload.single('image'), handleUpload); // 앱별 폴더
+// 업로드: 허용 출처 확인 → 횟수 제한 → 파일 수신 순서 (거부는 파일 받기 전에)
+app.post('/upload', requireAllowedOrigin, rateLimit, upload.single('image'), handleUpload); // 하위호환
+app.post('/upload/:app', requireAllowedOrigin, rateLimit, upload.single('image'), handleUpload); // 앱별 폴더
 
 // 잘못된 앱 이름·업로드 오류 처리
 app.use((err, _req, res, _next) => {
@@ -85,5 +149,7 @@ app.listen(PORT, () => {
   console.log(`🖼  이미지 서버 실행: http://localhost:${PORT}`);
   console.log(`    저장 위치: ${UPLOAD_DIR}`);
   console.log(`    앱별 폴더: POST /upload/<앱이름>  (예: /upload/artauction)`);
+  console.log(`    업로드 허용 출처: ${ALLOWED_ORIGINS.join(', ')}`);
+  console.log(`    요청 제한: IP당 ${RL_MAX}회 / ${Math.round(RL_WINDOW_MS / 60000)}분`);
   console.log(`    공개하려면: tailscale funnel --bg ${PORT}`);
 });
