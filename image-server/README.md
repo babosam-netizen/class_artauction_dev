@@ -1,7 +1,11 @@
 # 이미지 업로드 서버 (맥스튜디오 / NAS)
 
-작품 이미지를 맥스튜디오(또는 NAS)에 저장하고, Cloudflare Tunnel로 **무료 HTTPS** 공개해서
-배포된 앱(`art-auction.pages.dev`)에서 어디서나 업로드·표시할 수 있게 한다.
+작품 이미지를 맥스튜디오(또는 NAS)에 저장하고, Cloudflare Tunnel/Tailscale Funnel로 **HTTPS** 공개해서
+배포된 앱에서 어디서나 업로드·표시할 수 있게 한다.
+
+**여러 앱이 한 서버를 공유해도 앱별 폴더로 분리 저장된다.**
+`POST /upload/<앱이름>` → `/images/<앱이름>/<파일>` 에 저장 (예: `/upload/artauction`).
+앱 이름 없이 `POST /upload` 하면 루트에 저장(하위호환). 앱 이름은 소문자·숫자·하이픈 1~32자.
 
 ## 1. 설치 (맥스튜디오에서 1회)
 
