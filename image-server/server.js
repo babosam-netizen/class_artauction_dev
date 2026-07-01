@@ -31,6 +31,8 @@ const APP_NAME = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const DEFAULT_ORIGINS = [
   'https://art-auction.pages.dev',
   'https://*.art-auction.pages.dev', // Cloudflare Pages 미리보기 배포
+  'https://babosam.net',
+  'https://*.babosam.net', // 내 커스텀 도메인 하위 앱 전체
   'http://localhost:5173',
   'http://localhost:4173',
 ];
