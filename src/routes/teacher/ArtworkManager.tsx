@@ -158,6 +158,29 @@ export function ArtworkManager({ code }: { code: string }) {
     setUrlInput('');
   }
 
+  // 탭 작품을 반별로 그룹화
+  const tabGroups = useMemo<Array<{ srcCode: string; className?: string; artworks: SharedArtwork[] }>>(() => {
+    const map = new Map<string, { srcCode: string; className?: string; artworks: SharedArtwork[] }>();
+    for (const a of tabArtworks) {
+      if (!map.has(a._srcCode)) {
+        map.set(a._srcCode, { srcCode: a._srcCode, className: a._srcClassName, artworks: [] });
+      }
+      map.get(a._srcCode)!.artworks.push(a);
+    }
+    return Array.from(map.values());
+  }, [tabArtworks]);
+
+  function toggleGroup(groupArtworks: SharedArtwork[]) {
+    const keys = groupArtworks.map(makeKey);
+    const allChecked = keys.every((k) => selectedIds.has(k));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allChecked) keys.forEach((k) => next.delete(k));
+      else keys.forEach((k) => next.add(k));
+      return next;
+    });
+  }
+
   const tabAllChecked = tabArtworks.length > 0 && tabArtworks.every((a) => selectedIds.has(makeKey(a)));
   const totalSelected = selectedIds.size;
 
@@ -251,39 +274,54 @@ export function ArtworkManager({ code }: { code: string }) {
                     </div>
                   )}
 
-                  {/* 작품 목록 */}
+                  {/* 작품 목록 — 반별 그룹 */}
                   {tabArtworks.length === 0 ? (
                     <div className="py-3 text-center text-[11px]" style={{ color: 'rgba(232,217,184,0.4)' }}>
                       이 분류에 공유된 작품이 없어요
                     </div>
                   ) : (
-                    <div className="flex max-h-60 flex-col gap-1.5 overflow-y-auto pr-0.5">
-                      {tabArtworks.map((a) => {
-                        const key = makeKey(a);
-                        const checked = selectedIds.has(key);
+                    <div className="flex max-h-60 flex-col gap-3 overflow-y-auto pr-0.5">
+                      {tabGroups.map((group) => {
+                        const groupKeys = group.artworks.map(makeKey);
+                        const groupAllChecked = groupKeys.length > 0 && groupKeys.every((k) => selectedIds.has(k));
                         return (
-                          <label
-                            key={key}
-                            className="flex cursor-pointer items-center gap-2 rounded border p-2"
-                            style={{
-                              borderColor: checked ? 'rgba(196,167,90,0.5)' : 'rgba(196,167,90,0.15)',
-                              background: checked ? 'rgba(196,167,90,0.08)' : 'transparent',
-                            }}
-                          >
-                            <input type="checkbox" checked={checked} onChange={() => toggleId(key)} className="shrink-0" />
-                            {a.imageUrl && (
-                              <img src={a.imageUrl} alt={a.title} className="h-10 w-10 shrink-0 rounded object-cover" />
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate text-xs font-medium" style={{ color: '#ead9b8' }}>
-                                {a.title || '(제목 없음)'}
-                              </div>
-                              <div className="text-[10px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
-                                {a._srcClassName || a._srcCode}
-                                {a.appraisedValue ? ` · ${a.appraisedValue.toLocaleString()}원` : ''}
-                              </div>
+                          <div key={group.srcCode}>
+                            <label className="mb-1 flex cursor-pointer items-center gap-1.5 border-b pb-1 text-[11px] font-semibold" style={{ borderColor: 'rgba(196,167,90,0.2)', color: GOLD }}>
+                              <input type="checkbox" checked={groupAllChecked} onChange={() => toggleGroup(group.artworks)} />
+                              {group.className || group.srcCode} ({group.artworks.length}점)
+                            </label>
+                            <div className="flex flex-col gap-1.5">
+                              {group.artworks.map((a) => {
+                                const key = makeKey(a);
+                                const checked = selectedIds.has(key);
+                                return (
+                                  <label
+                                    key={key}
+                                    className="flex cursor-pointer items-center gap-2 rounded border p-2"
+                                    style={{
+                                      borderColor: checked ? 'rgba(196,167,90,0.5)' : 'rgba(196,167,90,0.15)',
+                                      background: checked ? 'rgba(196,167,90,0.08)' : 'transparent',
+                                    }}
+                                  >
+                                    <input type="checkbox" checked={checked} onChange={() => toggleId(key)} className="shrink-0" />
+                                    {a.imageUrl && (
+                                      <img src={a.imageUrl} alt={a.title} className="h-10 w-10 shrink-0 rounded object-cover" />
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                      <div className="truncate text-xs font-medium" style={{ color: '#ead9b8' }}>
+                                        {a.title || '(제목 없음)'}
+                                      </div>
+                                      {a.appraisedValue ? (
+                                        <div className="text-[10px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
+                                          {a.appraisedValue.toLocaleString()}원
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  </label>
+                                );
+                              })}
                             </div>
-                          </label>
+                          </div>
                         );
                       })}
                     </div>
