@@ -4,6 +4,8 @@ import { db } from '@/firebase/app';
 import { paths } from '@/firebase/paths';
 import { sortByOrder } from '@/features/artwork/api';
 import { saveAppreciation } from '@/features/appreciation/api';
+import { awardReward } from '@/features/rewards/api';
+import { RewardToast } from '@/features/rewards/RewardToast';
 import { updatePresence } from '@/features/entry/api';
 import type { Appreciation, Artwork, GradeBand } from '@/models';
 
@@ -24,13 +26,14 @@ interface Props {
   code: string;
   studentNumber: string;
   studentName: string;
+  groupId?: string;
   gradeBand: GradeBand;
   prompts: string[];
   artworks: Artwork[];
   demo?: boolean;
 }
 
-export function BranchView({ code, studentNumber, studentName, gradeBand, prompts, artworks, demo = false }: Props) {
+export function BranchView({ code, studentNumber, studentName, groupId, gradeBand, prompts, artworks, demo = false }: Props) {
   const pool = sortByOrder(artworks.filter((a) => a.placement?.kind === 'branch'));
 
   const [picked, setPicked] = useState<string | null>(null);
@@ -39,6 +42,7 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [reward, setReward] = useState<number | null>(null);
 
   // 재입장 시 기존 선택/감상 복구
   useEffect(() => {
@@ -69,7 +73,15 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
   function choose(a: Artwork) {
     setPicked(a.id);
     setStep(0);
-    if (!demo) updatePresence(code, studentNumber, 'branch', a.title).catch(() => {});
+    if (!demo) {
+      updatePresence(code, studentNumber, 'branch', a.title).catch(() => {});
+      // 선택작품 랜덤 보상 (감상한 선택작품마다 1회, 학생·작품별로 다르게)
+      if (groupId) {
+        awardReward(code, studentNumber, groupId, a.id, 'branch')
+          .then((r) => { if (r.isNew) setReward(r.amount); })
+          .catch(() => {});
+      }
+    }
   }
 
   function setAnswer(v: string) {
@@ -163,6 +175,7 @@ export function BranchView({ code, studentNumber, studentName, gradeBand, prompt
   // ── 2) 선택한 작품 감상 (해설 없음)
   return (
     <Wall>
+      <RewardToast amount={reward} kind="branch" onDone={() => setReward(null)} />
       <div className="relative z-[2] flex flex-1 flex-col items-center justify-center">
         <div className="flex flex-col items-center" style={{ animation: 'fadeUp 0.5s ease' }}>
           <div style={{ background: C.frame, padding: 10, boxShadow: '0 0 0 1.5px rgba(80,50,5,0.9), 0 28px 80px rgba(0,0,0,0.9)' }}>

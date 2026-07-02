@@ -53,6 +53,12 @@
           }
         },
 
+        "rewards": {
+          "$number": {
+            ".write": "auth != null"
+          }
+        },
+
         "groups": {
           "$groupId": {
             ".write": "auth != null",

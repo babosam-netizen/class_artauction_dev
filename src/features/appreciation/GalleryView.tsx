@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { get, ref } from 'firebase/database';
 import { db } from '@/firebase/app';
 import { paths } from '@/firebase/paths';
 import { saveAppreciation } from './api';
+import { awardReward } from '@/features/rewards/api';
+import { RewardToast } from '@/features/rewards/RewardToast';
 import { updatePresence } from '@/features/entry/api';
 import type { Appreciation, Artwork, GradeBand, Phase } from '@/models';
 
@@ -23,6 +25,7 @@ interface GalleryViewProps {
   code: string;
   studentNumber: string;
   studentName: string;
+  groupId?: string;
   gradeBand: GradeBand;
   prompts: string[];
   artworks: Artwork[];
@@ -35,6 +38,7 @@ export function GalleryView({
   code,
   studentNumber,
   studentName,
+  groupId,
   gradeBand,
   prompts,
   artworks,
@@ -49,6 +53,7 @@ export function GalleryView({
   const [savedSteps, setSavedSteps] = useState<Set<number>>(new Set());
   const [showCommentary, setShowCommentary] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [reward, setReward] = useState<number | null>(null);
 
   const total = artworks.length;
   const current = artworks[index];
@@ -75,6 +80,18 @@ export function GalleryView({
       active = false;
     };
   }, [current?.id, code, studentNumber, prompts.length, demo, phase]);
+
+  // 공통감상 보상: 이 작품의 모든 질문에 답하면(=감상 완료) 10억을 모둠 예산에 합산 (작품별 1회)
+  const awardedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (demo || !current || !groupId) return;
+    const done = prompts.length > 0 && answers.every((a) => a.trim().length > 0);
+    if (!done || awardedRef.current.has(current.id)) return;
+    awardedRef.current.add(current.id);
+    awardReward(code, studentNumber, groupId, current.id, 'common')
+      .then((r) => { if (r.isNew) setReward(r.amount); })
+      .catch(() => { awardedRef.current.delete(current.id); });
+  }, [current?.id, answers, demo, groupId, code, studentNumber, prompts.length]);
 
   if (total === 0) {
     return (
@@ -127,6 +144,7 @@ export function GalleryView({
 
   return (
     <Wall>
+      <RewardToast amount={reward} kind="common" onDone={() => setReward(null)} />
       <div className="relative z-[2] flex flex-1 flex-col items-center justify-center" style={{ transition: 'all 0.4s ease' }}>
         {index > 0 && <Arrow side="left" onClick={() => setIndex((i) => Math.max(0, i - 1))} />}
         {index < total - 1 && (

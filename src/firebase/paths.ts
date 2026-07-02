@@ -22,6 +22,11 @@ export const paths = {
   appreciation: (code: string, number: string, artworkId: string) =>
     `sessions/${code}/appreciations/${number}/${artworkId}`,
 
+  // 감상/선택 보상 장부 (학생·작품별 1회 지급 기록)
+  rewards: (code: string, number: string) => `sessions/${code}/rewards/${number}`,
+  reward: (code: string, number: string, artworkId: string) =>
+    `sessions/${code}/rewards/${number}/${artworkId}`,
+
   auctionItems: (code: string) => `sessions/${code}/auction/items`,
   auctionItem: (code: string, artworkId: string) =>
     `sessions/${code}/auction/items/${artworkId}`,
