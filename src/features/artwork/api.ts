@@ -29,7 +29,19 @@ export async function addArtwork(
 ): Promise<string> {
   const newRef = push(ref(db, paths.artworks(code)));
   const id = newRef.key!;
-  const artwork: Artwork = { id, order, ...input };
+  // Firebase set()은 값에 undefined가 있으면 예외를 던지므로 기본값으로 보정한다
+  // (다른 반에서 가져온 원본에 일부 필드가 비어 있어도 안전하게 복사되도록).
+  const artwork: Artwork = {
+    id,
+    order,
+    imageUrl: input.imageUrl ?? '',
+    title: input.title ?? '',
+    source: input.source ?? '',
+    appraisedValue: input.appraisedValue ?? 0,
+    commentary: input.commentary ?? '',
+    placement: input.placement ?? { kind: 'common' },
+    forAuction: input.forAuction ?? false,
+  };
   await set(newRef, artwork);
   return id;
 }

@@ -127,8 +127,14 @@ export function ArtworkManager({ code }: { code: string }) {
       const n = await copySelectedArtworks(toImport, code, artworks.length, destPlacement);
       setImportMsg(`${n}점을 ${dest === 'common' ? '공통감상실' : '선택감상실'}로 가져왔어요 ✓`);
       setSelectedIds(new Set());
-    } catch {
-      setImportMsg('가져오기 실패 — 다시 시도해 주세요');
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? '';
+      if (/permission|PERMISSION_DENIED/i.test(msg)) {
+        // 쓰기 권한 없음 — 이 세션을 만든 기기(브라우저)에서만 작품을 추가할 수 있음
+        setImportMsg('가져오기 실패: 이 세션의 소유자(처음 만든 기기)에서만 작품을 추가할 수 있어요. 세션을 만든 브라우저에서 다시 시도해 주세요.');
+      } else {
+        setImportMsg(`가져오기 실패: ${msg || '알 수 없는 오류'} — 다시 시도해 주세요`);
+      }
     } finally {
       setImporting(false);
     }
