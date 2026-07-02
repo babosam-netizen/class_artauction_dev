@@ -12,29 +12,29 @@
       ".read": "auth != null",
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && (!data.exists() ? newData.child('meta/teacherUid').val() === auth.uid : data.child('meta/teacherUid').val() === auth.uid)",
+        ".write": "auth != null && (auth.token.email != null || (!data.exists() ? newData.child('meta/teacherUid').val() === auth.uid : data.child('meta/teacherUid').val() === auth.uid))",
 
         "meta": {
-          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid",
+          ".write": "auth != null && (auth.token.email != null || root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid)",
           ".validate": "newData.hasChildren(['code', 'teacherUid', 'gradeBand'])",
-          "teacherUid": { ".validate": "newData.val() === auth.uid" }
+          "teacherUid": { ".validate": "newData.val() === auth.uid || auth.token.email != null" }
         },
 
         "state": {
-          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid",
+          ".write": "auth != null && (auth.token.email != null || root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid)",
           "phase": { ".validate": "newData.isString()" }
         },
 
         "content": {
-          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid"
+          ".write": "auth != null && (auth.token.email != null || root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid)"
         },
 
         "artworks": {
-          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid"
+          ".write": "auth != null && (auth.token.email != null || root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid)"
         },
 
         "results": {
-          ".write": "auth != null && root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid"
+          ".write": "auth != null && (auth.token.email != null || root.child('sessions').child($code).child('meta/teacherUid').val() === auth.uid)"
         },
 
         "students": {

@@ -29,11 +29,13 @@ if (import.meta.env.VITE_USE_EMULATOR === 'true') {
 // RTDB 보안 규칙이 모든 읽기/쓰기에 auth != null 을 요구하므로,
 // 어떤 화면이든 데이터에 접근하기 전에 인증이 끝나 있어야 한다.
 export const authReady: Promise<void> = new Promise((resolve) => {
-  const unsub = onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, (user) => {
     if (user) {
-      unsub();
+      // 이미 로그인돼 있으면(익명이든, 지속된 교사 계정이든) 그대로 사용.
       resolve();
+    } else {
+      // 로그인이 전혀 없을 때만 익명 로그인. (지속된 교사 계정을 덮어쓰지 않도록)
+      signInAnonymously(auth).catch((e) => console.error('익명 로그인 실패', e));
     }
   });
-  signInAnonymously(auth).catch((e) => console.error('익명 로그인 실패', e));
 });

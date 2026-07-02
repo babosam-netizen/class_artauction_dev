@@ -4,6 +4,8 @@ import {
   teacherPasswordExists,
   setTeacherPassword,
   verifyTeacherPassword,
+  signInAsTeacher,
+  ensureTeacherAccount,
   isUnlocked,
   markUnlocked,
 } from './api';
@@ -30,15 +32,28 @@ export function TeacherGate({ children }: { children: ReactNode }) {
     setError('');
     try {
       if (exists === false) {
+        // 최초 설정: 암호 저장 + 공용 교사 계정 생성 + 로그인
         if (pw.length < 4) return setError('암호는 4자 이상으로 정해주세요');
         if (pw !== pw2) return setError('두 암호가 다릅니다');
         await setTeacherPassword(pw);
+        await ensureTeacherAccount(pw);
+        await signInAsTeacher(pw);
         markUnlocked();
         setUnlocked(true);
       } else {
-        if (await verifyTeacherPassword(pw)) {
+        // 교사 공용 계정으로 로그인 → 이 기기가 어느 세션이든 편집 가능(교사 역할)
+        if (await signInAsTeacher(pw)) {
           markUnlocked();
           setUnlocked(true);
+        } else if (await verifyTeacherPassword(pw)) {
+          // 계정이 아직 없던 기존 세션(마이그레이션) → 만들고 로그인
+          await ensureTeacherAccount(pw);
+          if (await signInAsTeacher(pw)) {
+            markUnlocked();
+            setUnlocked(true);
+          } else {
+            setError('로그인에 실패했어요. 다시 시도해 주세요.');
+          }
         } else {
           setError('암호가 틀렸습니다');
         }
