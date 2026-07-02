@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { get, ref } from 'firebase/database';
 import { db } from '@/firebase/app';
 import { paths } from '@/firebase/paths';
 import { saveAppreciation } from './api';
-import { awardReward } from '@/features/rewards/api';
-import { RewardToast } from '@/features/rewards/RewardToast';
+import { awardEnvelope, getRewardFor } from '@/features/rewards/api';
+import { EnvelopeReward } from '@/features/rewards/EnvelopeReward';
 import { updatePresence } from '@/features/entry/api';
 import type { Appreciation, Artwork, GradeBand, Phase } from '@/models';
 
@@ -53,7 +53,8 @@ export function GalleryView({
   const [savedSteps, setSavedSteps] = useState<Set<number>>(new Set());
   const [showCommentary, setShowCommentary] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [reward, setReward] = useState<number | null>(null);
+  const [rewardedIds, setRewardedIds] = useState<Set<string>>(new Set());
+  const [showEnvelope, setShowEnvelope] = useState(false);
 
   const total = artworks.length;
   const current = artworks[index];
@@ -81,17 +82,15 @@ export function GalleryView({
     };
   }, [current?.id, code, studentNumber, prompts.length, demo, phase]);
 
-  // 공통감상 보상: 이 작품의 모든 질문에 답하면(=감상 완료) 10억을 모둠 예산에 합산 (작품별 1회)
-  const awardedRef = useRef<Set<string>>(new Set());
+  // 이 작품에서 이미 사례금을 받았는지 확인(재입장 대비)
   useEffect(() => {
     if (demo || !current || !groupId) return;
-    const done = prompts.length > 0 && answers.every((a) => a.trim().length > 0);
-    if (!done || awardedRef.current.has(current.id)) return;
-    awardedRef.current.add(current.id);
-    awardReward(code, studentNumber, groupId, current.id, 'common')
-      .then((r) => { if (r.isNew) setReward(r.amount); })
-      .catch(() => { awardedRef.current.delete(current.id); });
-  }, [current?.id, answers, demo, groupId, code, studentNumber, prompts.length]);
+    let active = true;
+    getRewardFor(code, studentNumber, current.id).then((amt) => {
+      if (active && amt !== null) setRewardedIds((prev) => new Set(prev).add(current.id));
+    });
+    return () => { active = false; };
+  }, [current?.id, demo, groupId, code, studentNumber]);
 
   if (total === 0) {
     return (
@@ -111,6 +110,18 @@ export function GalleryView({
   const boxW = open ? 'min(90vh, calc(100vw - 400px))' : 'min(128vh, 95vw)';
   const answeredCount = answers.filter((a) => a.trim()).length;
   const allAnswered = qCount > 0 && answers.every((a) => a.trim().length > 0);
+  // 감상 완료했고 아직 사례금을 안 받았으면 봉투를 먼저 연다
+  const needsEnvelope = allAnswered && !demo && !!groupId && !rewardedIds.has(current.id);
+
+  // 봉투에서 금액을 고르면 지급 + 모둠자금 유입 → 해설로
+  async function onEnvelopePicked(amount: number) {
+    setShowEnvelope(false);
+    if (current && groupId && !demo) {
+      const r = await awardEnvelope(code, studentNumber, groupId, current.id, 'common', amount);
+      if (r.isNew || !r.blocked) setRewardedIds((prev) => new Set(prev).add(current.id));
+    }
+    setShowCommentary(true);
+  }
 
   function setAnswer(value: string) {
     setAnswers((prev) => prev.map((a, i) => (i === step ? value : a)));
@@ -144,7 +155,7 @@ export function GalleryView({
 
   return (
     <Wall>
-      <RewardToast amount={reward} kind="common" onDone={() => setReward(null)} />
+      {showEnvelope && <EnvelopeReward kind="common" onDone={onEnvelopePicked} />}
       <div className="relative z-[2] flex flex-1 flex-col items-center justify-center" style={{ transition: 'all 0.4s ease' }}>
         {index > 0 && <Arrow side="left" onClick={() => setIndex((i) => Math.max(0, i - 1))} />}
         {index < total - 1 && (
@@ -200,16 +211,26 @@ export function GalleryView({
               <span>{open ? '닫기' : answeredCount > 0 ? `감상 이어쓰기 (${answeredCount}/${qCount})` : `감상 기록하기 (질문 ${qCount}개)`}</span>
             </button>
 
-            {/* 해설/다음: 모두 답해야 열림 */}
+            {/* 해설/다음: 모두 답해야 열림. 아직 사례금을 안 받았으면 봉투 먼저 */}
             <div className="mt-2">
               {allAnswered ? (
-                <button
-                  onClick={() => setShowCommentary(true)}
-                  className="inline-flex items-center rounded-full border px-6 py-3 text-sm"
-                  style={{ borderColor: C.gold, background: 'rgba(196,167,90,0.15)', color: C.cream }}
-                >
-                  해설 보기 →
-                </button>
+                needsEnvelope ? (
+                  <button
+                    onClick={() => setShowEnvelope(true)}
+                    className="inline-flex items-center rounded-full border px-6 py-3 text-sm font-bold"
+                    style={{ borderColor: C.green, background: 'rgba(143,206,143,0.2)', color: C.cream, boxShadow: '0 0 18px rgba(143,206,143,0.2)' }}
+                  >
+                    ✅ 최종 제출 — 사례금 봉투 받기 🎁
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowCommentary(true)}
+                    className="inline-flex items-center rounded-full border px-6 py-3 text-sm"
+                    style={{ borderColor: C.gold, background: 'rgba(196,167,90,0.15)', color: C.cream }}
+                  >
+                    해설 보기 →
+                  </button>
+                )
               ) : (
                 <div className="text-xs" style={{ color: 'rgba(232,217,184,0.5)' }}>
                   🔒 {qCount}개 질문에 모두 답하면 해설과 다음 작품이 열려요
@@ -281,11 +302,11 @@ export function GalleryView({
 
             {allAnswered ? (
               <button
-                onClick={() => { setOpen(false); setShowCommentary(true); }}
+                onClick={() => { setOpen(false); if (needsEnvelope) setShowEnvelope(true); else setShowCommentary(true); }}
                 className="rounded-xl border py-4 text-center text-base font-bold"
                 style={{ background: 'rgba(143,206,143,0.2)', borderColor: C.green, color: C.cream, boxShadow: '0 0 18px rgba(143,206,143,0.2)' }}
               >
-                ✅ {qCount}개 답변 완료 — 해설 보기 →
+                {needsEnvelope ? '✅ 최종 제출 — 사례금 봉투 받기 🎁' : `✅ ${qCount}개 답변 완료 — 해설 보기 →`}
               </button>
             ) : (
               <div className="text-center text-[11px]" style={{ color: 'rgba(232,217,184,0.45)' }}>

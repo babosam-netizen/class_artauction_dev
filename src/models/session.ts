@@ -11,6 +11,7 @@ export interface SessionMeta {
   timerSeconds: number;
   commonGalleryCount: number; // 1~3
   branchDoorCount: number;
+  branchPickLimit?: number; // 학생이 고를 수 있는 선택작품 수 (기본 1)
   groupAssignMode: GroupAssignMode;
   groupCount: number;
   groupSize: number; // 모둠당 정원

@@ -60,14 +60,16 @@ export interface CreateSessionParams {
   groupAssignMode?: GroupAssignMode;
 }
 
-/** 세션 생성 → 코드 발급. meta/state/content 시드 기록. 교사 익명 인증. */
+/** 세션 생성 → 코드 발급. meta/state/content 시드 기록. */
 export async function createSession(params: CreateSessionParams): Promise<string> {
-  const cred = await signInAnonymously(auth);
+  // 이미 로그인돼 있으면(교사 계정 등) 그 uid를 소유자로. 없을 때만 익명 로그인.
+  // (교사 계정으로 만들 때 익명으로 강등되지 않도록)
+  const uid = auth.currentUser?.uid ?? (await signInAnonymously(auth)).user.uid;
   const code = generateCode();
 
   const meta: SessionMeta = {
     code,
-    teacherUid: cred.user.uid,
+    teacherUid: uid,
     className: params.className.trim(),
     teacherName: params.teacherName.trim(),
     gradeBand: params.gradeBand,
@@ -76,6 +78,7 @@ export async function createSession(params: CreateSessionParams): Promise<string
     timerSeconds: params.timerSeconds,
     commonGalleryCount: params.commonGalleryCount,
     branchDoorCount: params.branchDoorCount,
+    branchPickLimit: 1,
     groupAssignMode: params.groupAssignMode ?? 'preset',
     groupCount: params.groupCount,
     groupSize: params.groupSize,

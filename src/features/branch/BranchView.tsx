@@ -4,8 +4,8 @@ import { db } from '@/firebase/app';
 import { paths } from '@/firebase/paths';
 import { sortByOrder } from '@/features/artwork/api';
 import { saveAppreciation } from '@/features/appreciation/api';
-import { awardReward } from '@/features/rewards/api';
-import { RewardToast } from '@/features/rewards/RewardToast';
+import { awardEnvelope } from '@/features/rewards/api';
+import { EnvelopeReward } from '@/features/rewards/EnvelopeReward';
 import { updatePresence } from '@/features/entry/api';
 import type { Appreciation, Artwork, GradeBand } from '@/models';
 
@@ -30,10 +30,11 @@ interface Props {
   gradeBand: GradeBand;
   prompts: string[];
   artworks: Artwork[];
+  branchLimit?: number; // 학생이 고를 수 있는 선택작품 수 (기본 1)
   demo?: boolean;
 }
 
-export function BranchView({ code, studentNumber, studentName, groupId, gradeBand, prompts, artworks, demo = false }: Props) {
+export function BranchView({ code, studentNumber, studentName, groupId, gradeBand, prompts, artworks, branchLimit = 1, demo = false }: Props) {
   const pool = sortByOrder(artworks.filter((a) => a.placement?.kind === 'branch'));
 
   const [picked, setPicked] = useState<string | null>(null);
@@ -42,23 +43,35 @@ export function BranchView({ code, studentNumber, studentName, groupId, gradeBan
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [reward, setReward] = useState<number | null>(null);
+  const [rewardedIds, setRewardedIds] = useState<Set<string>>(new Set()); // 보상받은 선택작품
+  const [showEnvelope, setShowEnvelope] = useState(false);
+  const [limitMsg, setLimitMsg] = useState('');
 
-  // 재입장 시 기존 선택/감상 복구
+  // 재입장 시 기존 선택/감상 + 받은 보상 복구
   useEffect(() => {
     if (demo) return;
     let active = true;
-    get(ref(db, paths.appreciations(code, studentNumber))).then((snap) => {
-      if (!active || !snap.exists()) return;
-      const map = snap.val() as Record<string, Appreciation>;
-      const branchIds = new Set(pool.map((a) => a.id));
-      const found = Object.keys(map).find((id) => branchIds.has(id));
-      if (found) {
-        const prev = map[found];
-        setPicked(found);
-        setAnswers(prompts.map((_, i) => prev.answers?.[i] ?? ''));
-        setSavedSteps(new Set((prev.answers ?? []).map((a, i) => (a.trim() ? i : -1)).filter((i) => i >= 0)));
-        setSubmitted(true);
+    const branchIds = new Set(pool.map((a) => a.id));
+    Promise.all([
+      get(ref(db, paths.appreciations(code, studentNumber))),
+      get(ref(db, paths.rewards(code, studentNumber))),
+    ]).then(([aSnap, rSnap]) => {
+      if (!active) return;
+      if (rSnap.exists()) {
+        const recs = rSnap.val() as Record<string, { kind: string }>;
+        const ids = Object.keys(recs).filter((id) => recs[id]?.kind === 'branch' && branchIds.has(id));
+        if (ids.length) setRewardedIds(new Set(ids));
+      }
+      if (aSnap.exists()) {
+        const map = aSnap.val() as Record<string, Appreciation>;
+        const found = Object.keys(map).find((id) => branchIds.has(id));
+        if (found) {
+          const prev = map[found];
+          setPicked(found);
+          setAnswers(prompts.map((_, i) => prev.answers?.[i] ?? ''));
+          setSavedSteps(new Set((prev.answers ?? []).map((a, i) => (a.trim() ? i : -1)).filter((i) => i >= 0)));
+          setSubmitted(true);
+        }
       }
     });
     updatePresence(code, studentNumber, 'branch').catch(() => {});
@@ -69,19 +82,28 @@ export function BranchView({ code, studentNumber, studentName, groupId, gradeBan
 
   const current = pool.find((a) => a.id === picked);
   const allAnswered = prompts.length > 0 && answers.every((a) => a.trim().length > 0);
+  const atLimit = rewardedIds.size >= branchLimit;
 
   function choose(a: Artwork) {
+    // 이미 한도만큼 골랐고, 이 작품은 보상받은 게 아니면 못 고름
+    if (atLimit && !rewardedIds.has(a.id)) {
+      setLimitMsg(`선택작품은 ${branchLimit}점까지만 고를 수 있어요`);
+      return;
+    }
+    setLimitMsg('');
     setPicked(a.id);
     setStep(0);
-    if (!demo) {
-      updatePresence(code, studentNumber, 'branch', a.title).catch(() => {});
-      // 선택작품 랜덤 보상 (감상한 선택작품마다 1회, 학생·작품별로 다르게)
-      if (groupId) {
-        awardReward(code, studentNumber, groupId, a.id, 'branch')
-          .then((r) => { if (r.isNew) setReward(r.amount); })
-          .catch(() => {});
-      }
+    if (!demo) updatePresence(code, studentNumber, 'branch', a.title).catch(() => {});
+  }
+
+  // 봉투에서 금액을 고르면 지급 + 모둠자금 유입
+  async function onEnvelopePicked(amount: number) {
+    setShowEnvelope(false);
+    if (current && groupId && !demo) {
+      const r = await awardEnvelope(code, studentNumber, groupId, current.id, 'branch', amount, branchLimit);
+      if (r.isNew) setRewardedIds((prev) => new Set(prev).add(current.id));
     }
+    setSubmitted(true);
   }
 
   function setAnswer(v: string) {
@@ -110,7 +132,12 @@ export function BranchView({ code, studentNumber, studentName, groupId, gradeBan
     setBusy(true);
     try {
       if (!demo) await saveAppreciation(code, studentNumber, current.id, answers);
-      setSubmitted(true);
+      // 이미 보상받은 작품이 아니면 사례금 봉투 → onEnvelopePicked에서 제출 완료 처리
+      if (!demo && groupId && !rewardedIds.has(current.id)) {
+        setShowEnvelope(true);
+      } else {
+        setSubmitted(true);
+      }
     } finally {
       setBusy(false);
     }
@@ -157,8 +184,15 @@ export function BranchView({ code, studentNumber, studentName, groupId, gradeBan
         <div className="mx-auto max-w-4xl px-6 py-10">
           <div className="text-center">
             <div className="text-xs tracking-[4px]" style={{ color: 'rgba(196,167,90,0.7)' }}>선택작품감상실</div>
-            <div className="mt-2 font-display text-4xl italic" style={{ color: C.cream }}>마음에 드는 작품 1점을 골라요</div>
-            <div className="mt-2 text-sm" style={{ color: C.creamDim }}>{pool.length}점 중 하나를 골라 감상을 써요</div>
+            <div className="mt-2 font-display text-4xl italic" style={{ color: C.cream }}>마음에 드는 작품 {branchLimit}점을 골라요</div>
+            <div className="mt-2 text-sm" style={{ color: C.creamDim }}>
+              {pool.length}점 중 {branchLimit}점을 골라 감상을 써요 · 감상 완료 시 사례금 봉투 1장
+            </div>
+            {limitMsg && (
+              <div className="mt-3 inline-block rounded-full border px-4 py-1.5 text-sm" style={{ borderColor: 'rgba(224,160,160,0.4)', color: '#e0a0a0' }}>
+                {limitMsg}
+              </div>
+            )}
           </div>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {pool.map((a) => (
@@ -175,7 +209,7 @@ export function BranchView({ code, studentNumber, studentName, groupId, gradeBan
   // ── 2) 선택한 작품 감상 (해설 없음)
   return (
     <Wall>
-      <RewardToast amount={reward} kind="branch" onDone={() => setReward(null)} />
+      {showEnvelope && <EnvelopeReward kind="branch" onDone={onEnvelopePicked} />}
       <div className="relative z-[2] flex flex-1 flex-col items-center justify-center">
         <div className="flex flex-col items-center" style={{ animation: 'fadeUp 0.5s ease' }}>
           <div style={{ background: C.frame, padding: 10, boxShadow: '0 0 0 1.5px rgba(80,50,5,0.9), 0 28px 80px rgba(0,0,0,0.9)' }}>

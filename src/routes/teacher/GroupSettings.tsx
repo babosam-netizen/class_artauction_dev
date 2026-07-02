@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { ref, update } from 'firebase/database';
+import { db } from '@/firebase/app';
 import { useRtdbValue, useRtdbList } from '@/firebase/hooks';
 import { paths } from '@/firebase/paths';
 import { updateGroupConfig } from '@/features/group/api';
@@ -14,6 +16,7 @@ export function GroupSettings({ code }: { code: string }) {
   const [open, setOpen] = useState(false); // 기본 접힘
   const [count, setCount] = useState<number | null>(null);
   const [size, setSize] = useState<number | null>(null);
+  const [pickLimit, setPickLimit] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -21,6 +24,7 @@ export function GroupSettings({ code }: { code: string }) {
     if (meta) {
       setCount((c) => c ?? meta.groupCount);
       setSize((s) => s ?? meta.groupSize ?? 4);
+      setPickLimit((p) => p ?? meta.branchPickLimit ?? 1);
     }
   }, [meta]);
 
@@ -30,7 +34,7 @@ export function GroupSettings({ code }: { code: string }) {
   const bar = 'w-full rounded-xl border px-4 py-2.5';
   const barStyle = { borderColor: 'rgba(196,167,90,0.25)', background: 'rgba(28,18,10,0.55)' };
 
-  if (!meta || count === null || size === null) {
+  if (!meta || count === null || size === null || pickLimit === null) {
     return (
       <div className={bar} style={barStyle}>
         <span className="text-sm" style={{ color: 'rgba(232,217,184,0.6)' }}>🧩 모둠 설정 …</span>
@@ -41,13 +45,17 @@ export function GroupSettings({ code }: { code: string }) {
   const orphaned = Object.values(groupsMap)
     .filter((g) => Number(g.id.replace('g', '')) > count)
     .reduce((sum, g) => sum + membersOf(g.id), 0);
-  const changed = count !== meta.groupCount || size !== (meta.groupSize ?? 4);
+  const changed =
+    count !== meta.groupCount ||
+    size !== (meta.groupSize ?? 4) ||
+    pickLimit !== (meta.branchPickLimit ?? 1);
 
   async function apply() {
     if (orphaned > 0 && !window.confirm(`삭제되는 모둠에 학생 ${orphaned}명이 있어요. '미배정'이 됩니다. 계속할까요?`)) return;
     setBusy(true);
     try {
       await updateGroupConfig(code, count!, size!, meta!.startingFunds);
+      await update(ref(db, paths.meta(code)), { branchPickLimit: pickLimit! });
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } finally {
@@ -75,6 +83,9 @@ export function GroupSettings({ code }: { code: string }) {
           </Field>
           <Field label="모둠당 인원">
             <Stepper value={size} min={1} max={15} suffix="명" onChange={setSize} />
+          </Field>
+          <Field label="선택작품 고르기">
+            <Stepper value={pickLimit} min={1} max={5} suffix="점" onChange={setPickLimit} />
           </Field>
 
           <div className="flex flex-wrap gap-1.5">

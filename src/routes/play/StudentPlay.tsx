@@ -316,6 +316,7 @@ function StudentSession({ joined, onExit }: { joined: Joined; onExit: () => void
         gradeBand={gradeBand}
         prompts={prompts}
         artworks={artworks}
+        branchLimit={meta.branchPickLimit ?? 1}
       />
     );
   } else if (phase === 'auction' && meta) {
