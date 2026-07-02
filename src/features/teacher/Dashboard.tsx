@@ -184,7 +184,12 @@ export function Dashboard({ code, gradeBand }: { code: string; gradeBand: GradeB
               <span className="font-display text-xl italic" style={{ color: '#ead9b8' }}>
                 {g.name} <span className="text-xs not-italic" style={{ color: 'rgba(232,217,184,0.5)' }}>· {members.length}명</span>
               </span>
-              <span className="text-xs" style={{ color: GOLD }}>잔여 {formatWon(g.remainingBudget ?? 0)}</span>
+              <span className="text-xs" style={{ color: GOLD }}>
+                잔여 {formatWon(g.remainingBudget ?? 0)}
+                {(g.rewardTotal ?? 0) > 0 && (
+                  <span style={{ color: 'rgba(232,217,184,0.5)' }}> · 사례금 {formatWon(g.rewardTotal ?? 0)}</span>
+                )}
+              </span>
             </div>
             {/* 경매장 모둠 활동 */}
             <div className="mb-2 text-[11px]" style={{ color: 'rgba(232,217,184,0.6)' }}>

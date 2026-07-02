@@ -35,6 +35,8 @@ export function StudentAuctionView({ code, studentNumber, groupId, artworks }: P
   const amRep = myGroup?.repStudentNumber === studentNumber;
   const hasRep = !!myGroup?.repStudentNumber;
   const budget = myGroup?.remainingBudget ?? 0;
+  const baseFunds = meta?.startingFunds ?? 0;
+  const rewardTotal = myGroup?.rewardTotal ?? 0;
   const price = item?.askingPrice ?? 0;
   const amIn = !!(item?.participants && item.participants[groupId]);
   const myBid = item?.bids?.[groupId] ?? 0;
@@ -53,7 +55,12 @@ export function StudentAuctionView({ code, studentNumber, groupId, artworks }: P
       <Wall>
         <div className="text-center">
           <div className="font-display text-3xl italic" style={{ color: C.cream }}>잠시 후 경매가 시작돼요</div>
-          <div className="mt-2 text-sm" style={{ color: C.creamDim }}>{myGroup?.name} · 남은 예산 {formatWon(budget)}</div>
+          <div className="mt-2 text-sm" style={{ color: C.creamDim }}>{myGroup?.name} · 경매자금 {formatWon(budget)}</div>
+          {rewardTotal > 0 && (
+            <div className="mt-1 text-xs" style={{ color: 'rgba(196,167,90,0.7)' }}>
+              기본 {formatWon(baseFunds)} + 감상 사례금 {formatWon(rewardTotal)}
+            </div>
+          )}
         </div>
       </Wall>
     );
@@ -77,6 +84,11 @@ export function StudentAuctionView({ code, studentNumber, groupId, artworks }: P
             <div className="text-xs" style={{ color: C.creamDim }}>{mode === 'sealed' ? '입찰경매' : '현재 호가'}</div>
             {mode !== 'sealed' && <div className="font-display text-4xl" style={{ color: C.gold }}>{formatWon(price)}</div>}
             <div className="mt-1 text-xs" style={{ color: C.creamDim }}>{myGroup?.name} · 남은 예산 {formatWon(budget)}</div>
+            {rewardTotal > 0 && (
+              <div className="text-[11px]" style={{ color: 'rgba(196,167,90,0.7)' }}>
+                기본 {formatWon(baseFunds)} + 사례금 {formatWon(rewardTotal)}
+              </div>
+            )}
           </div>
 
           {item?.status === 'sold' ? (

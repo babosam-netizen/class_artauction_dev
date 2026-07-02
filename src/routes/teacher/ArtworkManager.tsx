@@ -10,7 +10,10 @@ import {
 } from '@/features/artwork/api';
 import { setShowCommonTitles } from '@/features/session/api';
 import { uploadImage, loadImageServerUrl, saveImageServerUrl } from '@/features/artwork/upload';
+import { formatWon } from '@/utils/format';
 import type { Artwork, Placement, SessionMeta } from '@/models';
+
+const EOK = 100_000_000; // 1억 — 감정가는 억 단위로 입력/표시
 
 interface RawSessionForImport {
   meta?: SessionMeta;
@@ -319,7 +322,7 @@ export function ArtworkManager({ code }: { code: string }) {
                                       </div>
                                       {a.appraisedValue ? (
                                         <div className="text-[10px]" style={{ color: 'rgba(232,217,184,0.5)' }}>
-                                          {a.appraisedValue.toLocaleString()}원
+                                          {formatWon(a.appraisedValue)}
                                         </div>
                                       ) : null}
                                     </div>
@@ -395,12 +398,13 @@ function ArtworkCard({ code, art }: { code: string; art: Artwork }) {
             style={inputStyle}
           />
           <input
-            defaultValue={art.appraisedValue || ''}
-            onBlur={(e) => save({ appraisedValue: Number(e.target.value) || 0 })}
-            placeholder="감정가(원)"
-            inputMode="numeric"
+            defaultValue={art.appraisedValue ? art.appraisedValue / EOK : ''}
+            onBlur={(e) => save({ appraisedValue: Math.round((Number(e.target.value) || 0) * EOK) })}
+            placeholder="감정가(억)"
+            inputMode="decimal"
             className={`${inputCls} w-28`}
             style={inputStyle}
+            title="억 단위로 입력 (예: 20 = 20억, 13.2 = 13억 2천만)"
           />
         </div>
         <textarea

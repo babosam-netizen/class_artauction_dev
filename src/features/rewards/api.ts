@@ -95,6 +95,7 @@ export async function awardEnvelope(
   await runTransaction(ref(db, paths.group(code, groupId)), (g) => {
     if (!g) return g;
     g.remainingBudget = (g.remainingBudget ?? 0) + amount;
+    g.rewardTotal = (g.rewardTotal ?? 0) + amount; // 사례금 누적(기본자금과 구분)
     return g;
   });
 
